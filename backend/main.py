@@ -27,6 +27,22 @@ def clean_mermaid_code(code: str) -> str:
         if line.startswith("%%"):
             continue
 
+        # 대괄호 안의 괄호 처리 - 예: [Cloud Storage (Static Files)]
+        # Mermaid에서 대괄호 안에 괄호가 있으면 문제가 될 수 있으므로 안전하게 변환
+        import re
+
+        # 대괄호 안에 괄호가 있는 패턴을 찾아서 괄호를 다른 문자로 변환
+        def replace_brackets_in_label(match):
+            label_content = match.group(1)
+            # 괄호를 다른 문자로 변환 (예: () -> 〈〉 또는 - -)
+            label_content = label_content.replace("(", "〈").replace(")", "〉")
+            return f"[{label_content}]"
+
+        # 패턴: [내용(괄호포함)] 형태를 찾아서 변환
+        line = re.sub(
+            r"\[([^\[\]]*\([^\[\]]*\)[^\[\]]*)\]", replace_brackets_in_label, line
+        )
+
         # architecture-beta 구문에서는 기본적으로 안전한 구문 사용
         # 특수문자 처리는 최소화 (architecture-beta는 구조가 더 엄격함)
         cleaned_lines.append(line)
@@ -119,7 +135,7 @@ except Exception as e:
 class DiagramRequest(BaseModel):
     description: str
     cloud_provider: str = "gcp"  # gcp, aws, azure
-    diagram_type: str = "flowchart"  # flowchart, sequence, etc.
+    diagram_type: str = "architecture-beta"  #
 
 
 class DiagramResponse(BaseModel):
@@ -160,35 +176,36 @@ async def generate_diagram(request: DiagramRequest):
            
         2. **그룹 정의**:
            - group 그룹명(아이콘)[표시명]
-           - 예: group vpc(logos:aws-vpc)[Virtual Private Cloud]
+           - 예: group vpc(custom:aws-vpc)[Virtual Private Cloud]
            
         3. **서비스 정의**:
            - service 서비스명(아이콘)[표시명] in 그룹명
-           - 예: service app(logos:aws-ec2)[Application Server] in vpc
+           - 예: service app(custom:aws-ec2)[Application Server] in vpc
            
         4. **연결 방향**:
            - T (top), B (bottom), L (left), R (right)
            - 예: service1:R -- L:service2
            
         5. **아이콘 참고**:
-           - GCP: logos:google-cloud, logos:google-cloud-run, logos:google-cloud-storage
-           - AWS: logos:aws-ec2, logos:aws-s3, logos:aws-rds, logos:aws-vpc, logos:aws-cloudfront
-           - Azure: logos:microsoft-azure, logos:azure-functions, logos:azure-sql-database
+           - <provider>:아이콘명 형식 사용
+           - GCP: gcp:google-cloud, gcp:cloud-run, gcp:cloud-storage
+           - AWS: aws:aws, aws:ec2, aws:s3, aws:rds, aws:vpc, aws:cloudfront
+           - Azure: azr:azure, azr:functions, azr:sql-database
 
         {request.cloud_provider.upper()} 주요 서비스 및 아이콘:
-        - GCP: Cloud Run(logos:google-cloud-run), Compute Engine(logos:google-cloud), Cloud Storage(logos:google-cloud-storage), Cloud SQL(logos:google-cloud), Firestore(logos:google-cloud)
-        - AWS: EC2(logos:aws-ec2), Lambda(logos:aws-lambda), S3(logos:aws-s3), RDS(logos:aws-rds), ALB(logos:aws-elb), CloudFront(logos:aws-cloudfront)
-        - Azure: App Service(logos:microsoft-azure), Functions(logos:azure-functions), Blob Storage(logos:microsoft-azure), SQL Database(logos:azure-sql-database)
+        - GCP: Compute(gcp:compute), Cloud Run(gcp:cloud-run), Compute Engine(gcp:cloud-compute), Cloud Storage(gcp:cloud-storage), Cloud SQL(gcp:cloud-sql), Firestore(gcp:cloud-firestore)
+        - AWS: EC2(aws:ec2), Lambda(aws:lambda), S3(aws:s3), RDS(aws:rds), ALB(aws:elb), CloudFront(aws:cloudfront)
+        - Azure: App Service(azr:app-service), Functions(azr:functions), Blob Storage(azr:blob-storage), SQL Database(azr:sql-database)
 
         **올바른 예시:**
         ```
         architecture-beta
-            group vpc(logos:google-cloud)[Virtual Private Cloud]
-            service loadbalancer(logos:google-cloud)[Load Balancer] in vpc
-            service cloudrun(logos:google-cloud-run)[Cloud Run] in vpc
-            service cloudsql(logos:google-cloud)[Cloud SQL] in vpc
-            service storage(logos:google-cloud-storage)[Cloud Storage] in vpc
-            
+            group vpc(gcp:google-cloud)[Virtual Private Cloud]
+            service loadbalancer(gcp:google-cloud)[Load Balancer] in vpc
+            service cloudrun(gcp:google-cloud-run)[Cloud Run] in vpc
+            service cloudsql(gcp:google-cloud)[Cloud SQL] in vpc
+            service storage(gcp:google-cloud-storage)[Cloud Storage] in vpc
+
             loadbalancer:B -- T:cloudrun
             cloudrun:R -- L:cloudsql
             cloudrun:B -- T:storage

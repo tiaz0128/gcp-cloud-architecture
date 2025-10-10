@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- API Base URL 설정 (배포 시 환경에 맞게 수정) -->
-    <!-- <meta name="api-base-url" content="https://backend-service-url.run.app"> -->
     <title>Cloud Architecture Diagram Generator</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <style>
@@ -26,7 +25,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
@@ -70,7 +69,7 @@
             color: #374151;
         }
 
-        .form-group textarea, 
+        .form-group textarea,
         .form-group select {
             width: 100%;
             padding: 12px;
@@ -85,7 +84,7 @@
             resize: vertical;
         }
 
-        .form-group textarea:focus, 
+        .form-group textarea:focus,
         .form-group select:focus {
             outline: none;
             border-color: #4facfe;
@@ -159,8 +158,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .diagram-actions {
@@ -218,7 +222,7 @@
             .main-content {
                 grid-template-columns: 1fr;
             }
-            
+
             .input-panel {
                 border-right: none;
                 border-bottom: 2px solid #e2e8f0;
@@ -226,6 +230,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -238,12 +243,9 @@
                 <form id="diagramForm">
                     <div class="form-group">
                         <label for="description">아키텍처 설명</label>
-                        <textarea 
-                            id="description" 
-                            name="description" 
+                        <textarea id="description" name="description"
                             placeholder="예: FastAPI 앱을 Cloud Run으로 배포하고, Firestore를 데이터베이스로 사용합니다. 사용자는 Load Balancer를 통해 접근합니다."
-                            required
-                        ></textarea>
+                            required></textarea>
                     </div>
 
                     <div class="form-group">
@@ -255,13 +257,13 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
+                    <!-- <div class="form-group">
                         <label for="diagramType">다이어그램 타입</label>
                         <select id="diagramType" name="diagram_type">
                             <option value="flowchart">플로우차트</option>
                             <option value="sequence">시퀀스 다이어그램</option>
                         </select>
-                    </div>
+                    </div> -->
 
                     <button type="submit" class="generate-btn">
                         <span id="btnText">다이어그램 생성</span>
@@ -270,13 +272,16 @@
 
                 <div class="examples">
                     <h3>예시 템플릿</h3>
-                    <div class="example-item" onclick="setExample('웹 애플리케이션을 GCP Cloud Run으로 배포하고, Cloud SQL을 데이터베이스로 사용합니다. 앞에 Load Balancer가 있고 정적 파일은 Cloud Storage에 저장됩니다.')">
+                    <div class="example-item"
+                        onclick="setExample('웹 애플리케이션을 GCP Cloud Run으로 배포하고, Cloud SQL을 데이터베이스로 사용합니다. 앞에 Load Balancer가 있고 정적 파일은 Cloud Storage에 저장됩니다.')">
                         📱 웹 앱 + 데이터베이스
                     </div>
-                    <div class="example-item" onclick="setExample('마이크로서비스 아키텍처로 API Gateway를 통해 여러 서비스에 라우팅하고, 각 서비스는 독립적인 데이터베이스를 가집니다.')">
+                    <div class="example-item"
+                        onclick="setExample('마이크로서비스 아키텍처로 API Gateway를 통해 여러 서비스에 라우팅하고, 각 서비스는 독립적인 데이터베이스를 가집니다.')">
                         🔧 마이크로서비스 아키텍처
                     </div>
-                    <div class="example-item" onclick="setExample('데이터 파이프라인을 구축합니다. Cloud Storage에서 데이터를 읽어 BigQuery로 처리하고 결과를 시각화합니다.')">
+                    <div class="example-item"
+                        onclick="setExample('데이터 파이프라인을 구축합니다. Cloud Storage에서 데이터를 읽어 BigQuery로 처리하고 결과를 시각화합니다.')">
                         📊 데이터 파이프라인
                     </div>
                 </div>
@@ -304,20 +309,50 @@
     </div>
 
     <script>
-        // Mermaid 초기화 - 안정적인 설정
-        mermaid.initialize({ 
+        // Mermaid 초기화 - 아이콘 지원 설정
+        mermaid.initialize({
             startOnLoad: false,
             theme: 'default',
             securityLevel: 'loose',
             flowchart: {
                 useMaxWidth: true,
                 htmlLabels: true
+            },
+            architecture: {
+                useMaxWidth: true,
+                htmlLabels: true
+            },
+            // 아이콘 지원을 위한 설정
+            dompurifyConfig: {
+                USE_PROFILES: { svg: true, svgFilters: true },
+                ADD_TAGS: ['iconify-icon'],
+                ADD_ATTR: ['icon', 'width', 'height', 'inline']
             }
         });
 
+        
+        mermaid.registerIconPacks([
+            {
+                name: 'gcp',
+                loader: () =>
+                    fetch('https://storage.googleapis.com/gleaming-modem-474701-f3-cloud-architecture-frontend/icons/gcp.json').then((res) => res.json()),
+            },
+            {
+              name: 'azr',
+              loader: () =>
+                    fetch('https://storage.googleapis.com/gleaming-modem-474701-f3-cloud-architecture-frontend/icons/azr.json').then((res) => res.json()),
+              //   fetch('https://unpkg.com/azureiconkento@1.1.1/azureicons/allicons.json').then((res) => res.json()),
+            },
+            {
+                name: 'aws',
+                loader: () =>
+                    fetch('https://storage.googleapis.com/gleaming-modem-474701-f3-cloud-architecture-frontend/icons/aws.json').then((res) => res.json()),
+            },
+        ]);
+
         let currentMermaidCode = '';
         let mermaidCounter = 0;
-        
+
         // 환경에 따른 API URL 자동 설정
         function getApiBaseUrl() {
             // 환경 변수나 메타 태그에서 API URL 확인 (최우선)
@@ -325,16 +360,16 @@
             if (metaApiUrl && metaApiUrl.content) {
                 return metaApiUrl.content;
             }
-            
+
             // 현재 도메인이 localhost인 경우 로컬 개발 환경
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 return 'http://localhost:8080';
             }
-            
+
             // 프로덕션 환경에서는 현재 도메인 기반으로 API URL 구성
             const protocol = window.location.protocol;
             const hostname = window.location.hostname;
-            
+
             // Cloud Storage 호스팅의 경우 (.storage.googleapis.com 또는 storage.googleapis.com)
             if (hostname.includes('storage.googleapis.com')) {
                 // Cloud Storage에서 호스팅되는 경우, 메타 태그가 없으면 기본 백엔드 URL 패턴 사용
@@ -343,9 +378,9 @@
                 return 'https://cloud-diagram-generator-hfqglxuxxa-du.a.run.app'
             }
         }
-        
+
         const API_BASE_URL = getApiBaseUrl();
-        
+
         // 디버깅을 위한 API URL 확인
         console.log('🔗 API Base URL:', API_BASE_URL);
         console.log('🌍 Current hostname:', window.location.hostname);
@@ -362,7 +397,7 @@
             const requestData = {
                 description: formData.get('description'),
                 cloud_provider: formData.get('cloud_provider'),
-                diagram_type: formData.get('diagram_type')
+                diagram_type: 'architecture-beta', // formData.get('diagram_type')
             };
 
             showLoading();
@@ -370,7 +405,7 @@
             try {
                 console.log('📤 API 요청:', `${API_BASE_URL}/generate-diagram`);
                 console.log('📋 요청 데이터:', requestData);
-                
+
                 const response = await fetch(`${API_BASE_URL}/generate-diagram`, {
                     method: 'POST',
                     headers: {
@@ -385,28 +420,28 @@
 
                 const data = await response.json();
                 console.log('📥 API 응답:', data);
-                
+
                 if (!data.mermaid_code) {
                     throw new Error('API 응답에 mermaid_code가 없습니다.');
                 }
-                
+
                 currentMermaidCode = data.mermaid_code;
                 console.log('🎯 Mermaid 코드:', currentMermaidCode);
-                
+
                 await renderMermaidDiagram(currentMermaidCode);
                 showDiagramActions();
 
             } catch (error) {
                 console.error('❌ API 에러:', error);
-                
+
                 // 네트워크 오류인지 확인
                 if (error.name === 'TypeError' && error.message.includes('fetch')) {
                     showError(`API 서버에 연결할 수 없습니다.<br><br>
                         <strong>현재 API URL:</strong> ${API_BASE_URL}<br><br>
                         <em>배포가 완료되었는지 확인하거나 잠시 후 다시 시도해주세요.</em>`);
                 } else {
-                    showError('다이어그램 생성에 실패했습니다.<br><br>' + 
-                             '<strong>오류:</strong> ' + error.message);
+                    showError('다이어그램 생성에 실패했습니다.<br><br>' +
+                        '<strong>오류:</strong> ' + error.message);
                 }
             }
         }
@@ -414,77 +449,77 @@
         // Mermaid 다이어그램 렌더링 - 안정적인 방식
         async function renderMermaidDiagram(code) {
             const container = document.getElementById('diagramContainer');
-            
+
             if (!container) {
                 console.error('❌ 다이어그램 컨테이너를 찾을 수 없습니다');
                 hideLoading();
                 return;
             }
-            
+
             try {
                 console.log('🎨 Mermaid 코드 렌더링 시작:', code);
-                
+
                 // 기존 다이어그램 제거
                 container.innerHTML = '';
-                
+
                 // 고유 ID 생성
                 mermaidCounter++;
                 const graphDefinition = `mermaid-${mermaidCounter}`;
-                
+
                 console.log('🔧 Mermaid render 시도...');
-                
+
                 // mermaid.render 방식 사용 (가장 안정적)
                 const renderResult = await mermaid.render(graphDefinition, code);
-                
+
                 // SVG 삽입
                 const svgContainer = document.createElement('div');
                 svgContainer.style.textAlign = 'center';
                 svgContainer.style.padding = '20px';
                 svgContainer.innerHTML = renderResult.svg;
-                
+
                 container.appendChild(svgContainer);
-                
+
                 console.log('✅ Mermaid 렌더링 완료');
                 hideLoading();
-                
+
             } catch (error) {
                 console.error('❌ mermaid.render 실패:', error);
-                
+
                 // 대체 방법: 전통적인 방식
                 try {
                     console.log('� 대체 방법 시도...');
-                    
+
                     mermaidCounter++;
                     const fallbackId = `mermaid-fallback-${mermaidCounter}`;
-                    
+
                     // 컨테이너에 Mermaid 코드 직접 삽입
                     container.innerHTML = `
                         <div id="${fallbackId}" class="mermaid" style="text-align: center; padding: 20px;">
                             ${code}
                         </div>
                     `;
-                    
+
                     // DOM 렌더링 대기
                     await new Promise(resolve => setTimeout(resolve, 200));
-                    
+
                     // 요소 확인
                     const mermaidElement = document.getElementById(fallbackId);
                     if (!mermaidElement) {
                         throw new Error('Mermaid 요소를 찾을 수 없습니다.');
                     }
-                    
+
                     // 기존 처리 상태 제거
                     mermaidElement.removeAttribute('data-processed');
-                    
+
                     // mermaid.init 호출
                     mermaid.init(undefined, mermaidElement);
-                    
+
                     console.log('✅ 대체 방법으로 렌더링 완료');
                     hideLoading();
-                    
+
                 } catch (fallbackError) {
                     console.error('❌ 모든 렌더링 방법 실패:', fallbackError);
-                    
+
                     // 최종 대체: 텍스트 형태로라도 표시
                     showError(`다이어그램 렌더링에 실패했습니다.<br><br>
                         <strong>오류 1:</strong> ${error.message}<br>
@@ -502,7 +537,7 @@
             const loadingElement = document.getElementById('loading');
             const btnTextElement = document.getElementById('btnText');
             const buttonElement = document.querySelector('.generate-btn');
-            
+
             if (placeholderElement) placeholderElement.style.display = 'none';
             if (loadingElement) loadingElement.style.display = 'flex';
             if (btnTextElement) btnTextElement.textContent = '생성 중...';
@@ -514,7 +549,7 @@
             const loadingElement = document.getElementById('loading');
             const btnTextElement = document.getElementById('btnText');
             const buttonElement = document.querySelector('.generate-btn');
-            
+
             if (loadingElement) loadingElement.style.display = 'none';
             if (btnTextElement) btnTextElement.textContent = '다이어그램 생성';
             if (buttonElement) buttonElement.disabled = false;
@@ -555,7 +590,7 @@
 
             if (format === 'svg') {
                 const svgData = new XMLSerializer().serializeToString(svg);
-                const svgBlob = new Blob([svgData], {type: 'image/svg+xml'});
+                const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
                 const svgUrl = URL.createObjectURL(svgBlob);
                 const link = document.createElement('a');
                 link.href = svgUrl;
@@ -567,27 +602,27 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 const img = new Image();
-                
+
                 const svgData = new XMLSerializer().serializeToString(svg);
-                const svgBlob = new Blob([svgData], {type: 'image/svg+xml'});
+                const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
                 const svgUrl = URL.createObjectURL(svgBlob);
-                
-                img.onload = function() {
+
+                img.onload = function () {
                     canvas.width = img.width;
                     canvas.height = img.height;
                     ctx.drawImage(img, 0, 0);
-                    
-                    canvas.toBlob(function(blob) {
+
+                    canvas.toBlob(function (blob) {
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
                         link.download = 'cloud-architecture.png';
                         link.click();
                         URL.revokeObjectURL(link.href);
                     });
-                    
+
                     URL.revokeObjectURL(svgUrl);
                 };
-                
+
                 img.src = svgUrl;
             }
         }
@@ -601,6 +636,53 @@
             }
         }
 
+        // AWS 로고 테스트 함수
+        function testAwsLogos() {
+            // Architecture-beta 다이어그램 형태로 테스트
+            const awsCode = `architecture-beta
+    group vpc(logos:aws-vpc)[VPC]
+    service app(logos:aws-ec2)[Application Server] in vpc
+    service storage(logos:aws-s3)[S3 Bucket] in vpc
+    service db(logos:aws-aurora)[Database] in vpc
+    service internet(logos:aws-cloudfront)[Internet Gateway] in vpc
+
+    internet:B -- T:app
+    app:L -- R:storage
+    app:R -- L:db`;
+
+            console.log('🧪 AWS 로고 테스트...');
+            currentMermaidCode = awsCode;
+            showLoading();
+            renderMermaidDiagram(awsCode).then(() => {
+                showDiagramActions();
+                console.log('✅ AWS 로고 테스트 완료');
+            }).catch(error => {
+                console.error('❌ AWS 로고 테스트 실패:', error);
+
+                // 대체 방법: Simple Icons 형태로 시도
+                console.log('🔄 Simple Icons 형태로 재시도...');
+                const simpleIconsCode = `graph TB
+    subgraph "AWS VPC"
+        A["fa:fa-cloud Application Server<br/>(EC2)"]
+        B["fa:fa-database S3 Bucket"]
+        C["fa:fa-server Database<br/>(Aurora)"]
+        D["fa:fa-globe Internet Gateway<br/>(CloudFront)"]
+    end
+    
+    D --> A
+    A --> B
+    A --> C`;
+
+                currentMermaidCode = simpleIconsCode;
+                renderMermaidDiagram(simpleIconsCode).then(() => {
+                    showDiagramActions();
+                    console.log('✅ Font Awesome 아이콘으로 대체 완료');
+                }).catch(fallbackError => {
+                    console.error('❌ 모든 아이콘 테스트 실패:', fallbackError);
+                });
+            });
+        }
+
         // 디버깅용 테스트 함수
         function testMermaidCode() {
             const testCode = `graph TB
@@ -608,7 +690,7 @@
     B --> C[Cloud Run]
     C --> D[Cloud SQL]
     C --> E[Cloud Storage]`;
-            
+
             console.log('🧪 테스트 Mermaid 코드 렌더링...');
             currentMermaidCode = testCode;
             showLoading();
@@ -625,7 +707,7 @@
             const simpleCode = `graph LR
     A --> B
     B --> C`;
-            
+
             console.log('🧪 간단한 다이어그램 테스트...');
             currentMermaidCode = simpleCode;
             showLoading();
@@ -651,14 +733,17 @@
             console.log('🔧 사용 가능한 디버깅 함수들:');
             console.log('  - window.testMermaidCode() : 복잡한 다이어그램 테스트');
             console.log('  - window.testSimpleDiagram() : 간단한 다이어그램 테스트');
+            console.log('  - window.testAwsLogos() : AWS 로고 테스트');
             console.log('  - window.immediateTest() : 즉시 테스트 실행');
             console.log('  - Mermaid 버전:', mermaid.version || 'unknown');
-            
+
             // 개발자 도구에서 테스트할 수 있도록 전역 함수로 노출
             window.testMermaidCode = testMermaidCode;
             window.testSimpleDiagram = testSimpleDiagram;
+            window.testAwsLogos = testAwsLogos;
             window.immediateTest = immediateTest;
         });
     </script>
 </body>
+
 </html>

@@ -150,6 +150,12 @@ if [ -f "frontend/404.html" ]; then
     echo "✅ 404 에러 페이지 포함"
 fi
 
+# 커스텀 아이콘 파일들 복사
+if [ -d "frontend/icons" ]; then
+    cp -r frontend/icons $TEMP_DIR/
+    echo "✅ icons 디렉토리 포함"
+fi
+
 # 추가 정적 파일들이 있으면 복사 (css, js, images 등)
 if [ -d "frontend/assets" ]; then
     cp -r frontend/assets $TEMP_DIR/
@@ -170,11 +176,6 @@ gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://$BUCKET_NAME/index
 
 if [ -f "$TEMP_DIR/404.html" ]; then
     gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://$BUCKET_NAME/404.html
-fi
-
-# 정적 파일에 대한 긴 캐시 설정 (있는 경우)
-if [ -d "$TEMP_DIR/assets" ]; then
-    gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" gs://$BUCKET_NAME/assets/**
 fi
 
 # CORS 설정 (API 호출을 위해)
