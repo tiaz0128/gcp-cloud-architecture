@@ -5,14 +5,52 @@ from google.cloud import firestore
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import os
-import json
 from datetime import datetime
-from typing import Optional
 import logging
+import re
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def clean_mermaid_code(code: str) -> str:
+    """Mermaid 코드를 안전하게 정리하고 검증"""
+    lines = code.split("\n")
+    cleaned_lines = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # 주석 제거
+        if line.startswith("%%"):
+            continue
+
+        # 괄호 () 사용을 대괄호 [] 로 변경
+        # 예: A(Load Balancer) -> A["Load Balancer"]
+        line = re.sub(r"(\w+)\(([^)]+)\)", r'\1["\2"]', line)
+
+        # 레이블에 특수문자가 있으면 따옴표로 감싸기
+        # 예: A[Cloud Run - Web App] -> A["Cloud Run - Web App"]
+        line = re.sub(r'(\w+)\[([^"\]]+[^a-zA-Z0-9_\s][^"\]]*)\]', r'\1["\2"]', line)
+
+        # 노드 ID에서 특수문자 제거 (영문자, 숫자, 언더스코어만 허용)
+        line = re.sub(r'([^\w\s\[\]":\-\.><=|]+)', "", line)
+
+        cleaned_lines.append(line)
+
+    cleaned_code = "\n".join(cleaned_lines)
+
+    # 기본 구조 검증
+    if not cleaned_code.strip().startswith(("graph", "flowchart", "sequenceDiagram")):
+        logger.warning("Mermaid 코드가 올바른 다이어그램 타입으로 시작하지 않습니다")
+        # 기본 graph TB 추가
+        cleaned_code = f"graph TB\n{cleaned_code}"
+
+    return cleaned_code
+
 
 app = FastAPI(title="Cloud Architecture Diagram Generator")
 
@@ -60,9 +98,18 @@ def get_project_id():
 # Firestore 및 Vertex AI 초기화
 try:
     db = firestore.Client()
+    # Firestore 연결 테스트
+    test_collection = db.collection("test")
     logger.info("Firestore 클라이언트 초기화 성공")
 except Exception as e:
     logger.error(f"Firestore 클라이언트 초기화 실패: {e}")
+    if "does not exist" in str(e):
+        logger.error(
+            "Firestore 데이터베이스가 설정되지 않았습니다. GCP 콘솔에서 Firestore를 활성화해주세요."
+        )
+        logger.error(
+            f"URL: https://console.cloud.google.com/firestore/databases?project={get_project_id()}"
+        )
     db = None
 
 # Vertex AI 초기화
@@ -113,27 +160,53 @@ async def generate_diagram(request: DiagramRequest):
         클라우드 제공자: {request.cloud_provider.upper()}
         다이어그램 타입: {request.diagram_type}
 
-        규칙:
-        1. Mermaid 문법을 정확히 따라주세요
-        2. 클라우드 서비스 이름을 명확히 표시해주세요
-        3. 화살표와 연결선을 적절히 사용해주세요
-        4. 노드 이름은 간결하고 명확하게 작성해주세요
-        5. 오직 Mermaid 코드만 반환하고, 설명은 포함하지 마세요
+        **중요한 Mermaid 구문 규칙을 반드시 준수하세요:**
+
+        1. **노드 ID 규칙**:
+           - 노드 ID는 영문자로 시작하고 영문자, 숫자, 언더스코어만 사용
+           - 예: A, B1, User_Input, CloudRun, LoadBalancer
+           
+        2. **노드 레이블 규칙**:
+           - 레이블에 특수문자가 있으면 반드시 큰따옴표로 감싸기
+           - 괄호 () 사용 금지 - 대신 하이픈이나 언더스코어 사용
+           - 예: A["Cloud Run - Web App"], B["Cloud SQL - Database"]
+           
+        3. **화살표와 연결**:
+           - --> (기본 화살표), -.-> (점선), ==> (굵은 화살표) 사용
+           - 연결선에 레이블 추가시: A -->|"HTTP"| B
+           
+        4. **전체 구조**:
+           - graph TB (위에서 아래), graph LR (왼쪽에서 오른쪽) 사용
+           - 들여쓰기 4칸으로 일관성 유지
+           
+        5. **금지사항**:
+           - 노드 레이블에 괄호 () 사용 금지
+           - 특수문자는 반드시 따옴표 안에
+           - 공백이 있는 레이블은 반드시 따옴표로 감싸기
 
         {request.cloud_provider.upper()} 주요 서비스 참고:
         - GCP: Cloud Run, App Engine, Compute Engine, Cloud Storage, Firestore, Cloud SQL, Load Balancer, Cloud CDN
         - AWS: EC2, Lambda, S3, RDS, ALB, CloudFront, API Gateway
         - Azure: App Service, Functions, Blob Storage, SQL Database, Application Gateway
 
-        예시 형식:
+        **올바른 예시:**
         ```
         graph TB
-            A[User] --> B[Load Balancer]
-            B --> C[Web Server]
-            C --> D[Database]
+            User["User"] --> LoadBalancer["Load Balancer"]
+            LoadBalancer --> CloudRun["Cloud Run - Web App"]
+            CloudRun --> CloudSQL["Cloud SQL - Database"]
+            CloudRun --> CloudStorage["Cloud Storage - Static Files"]
+            CloudRun -.-> Firestore["Firestore - NoSQL DB"]
         ```
 
-        이제 위 설명을 바탕으로 Mermaid 코드를 생성해주세요:
+        **잘못된 예시 (사용하지 마세요):**
+        ```
+        graph TB
+            User --> LoadBalancer(Load Balancer)
+            LoadBalancer --> CloudRun[Cloud Run (Web App)]
+        ```
+
+        이제 위 규칙을 엄격히 따라 Mermaid 코드만 생성해주세요:
         """
 
         # Vertex AI (Gemini) 호출
@@ -160,6 +233,11 @@ async def generate_diagram(request: DiagramRequest):
                 mermaid_code = "\n".join(lines[start_idx + 1 :])
 
         mermaid_code = mermaid_code.strip()
+
+        # Mermaid 코드 안전성 검증 및 정리
+        mermaid_code = clean_mermaid_code(mermaid_code)
+
+        logger.info(f"생성된 Mermaid 코드: {mermaid_code}")
 
         # Firestore에 저장
         diagram_ref = db.collection("diagrams").document()
@@ -306,21 +384,37 @@ async def health_check():
     issues = []
 
     # Firestore 연결 확인
+    firestore_status = "healthy"
     if db is None:
         status = "unhealthy"
+        firestore_status = "unhealthy"
         issues.append("Firestore 연결 실패")
+    else:
+        # Firestore 실제 연결 테스트
+        try:
+            # 간단한 읽기 테스트
+            test_ref = db.collection("health_check").document("test")
+            test_ref.get()
+            firestore_status = "healthy"
+        except Exception as e:
+            status = "unhealthy"
+            firestore_status = "unhealthy"
+            issues.append(f"Firestore 연결 테스트 실패: {str(e)}")
 
     # Vertex AI 모델 확인
+    vertex_ai_status = "healthy"
     if model is None:
         status = "unhealthy"
+        vertex_ai_status = "unhealthy"
         issues.append("Vertex AI 모델 초기화 실패")
 
     return {
         "status": status,
         "timestamp": datetime.now().isoformat(),
+        "project_id": get_project_id(),
         "services": {
-            "firestore": "healthy" if db is not None else "unhealthy",
-            "vertex_ai": "healthy" if model is not None else "unhealthy",
+            "firestore": firestore_status,
+            "vertex_ai": vertex_ai_status,
         },
         "issues": issues if issues else None,
     }

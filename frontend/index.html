@@ -304,21 +304,19 @@
     </div>
 
     <script>
-        // Mermaid 초기화
+        // Mermaid 초기화 - 안정적인 설정
         mermaid.initialize({ 
             startOnLoad: false,
             theme: 'default',
-            themeVariables: {
-                primaryColor: '#4facfe',
-                primaryTextColor: '#374151',
-                primaryBorderColor: '#e2e8f0',
-                lineColor: '#6b7280',
-                secondaryColor: '#f3f4f6',
-                tertiaryColor: '#f9fafb'
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
             }
         });
 
         let currentMermaidCode = '';
+        let mermaidCounter = 0;
         
         // 환경에 따른 API URL 자동 설정
         function getApiBaseUrl() {
@@ -342,23 +340,7 @@
                 // Cloud Storage에서 호스팅되는 경우, 메타 태그가 없으면 기본 백엔드 URL 패턴 사용
                 // 일반적으로 배포 스크립트에서 메타 태그를 설정하므로 이 경우는 드물어야 함
                 console.warn('Cloud Storage 호스팅에서 API URL이 메타 태그로 설정되지 않았습니다.');
-                return 'https://cloud-diagram-generator-asia-northeast3.run.app';
-            }
-            
-            // Cloud Run의 경우 백엔드 서비스 URL 패턴
-            // 예: frontend가 https://storage.googleapis.com이면 backend는 https://backend-xxx.run.app
-            if (hostname.includes('.run.app')) {
-                const backendHostname = hostname.replace('frontend-', 'backend-');
-                return `${protocol}//${backendHostname}`;
-            }
-            
-            // 일반적인 경우: 같은 호스트의 다른 포트 또는 API 경로
-            // 포트 8080을 사용하거나 /api 경로 사용
-            if (window.location.port) {
-                return `${protocol}//${hostname}:8080`;
-            } else {
-                // 포트가 없는 경우 /api 경로 사용 (예: nginx 프록시 환경)
-                return `${protocol}//${hostname}/api`;
+                return 'https://cloud-diagram-generator-hfqglxuxxa-du.a.run.app'
             }
         }
         
@@ -387,6 +369,7 @@
 
             try {
                 console.log('📤 API 요청:', `${API_BASE_URL}/generate-diagram`);
+                console.log('📋 요청 데이터:', requestData);
                 
                 const response = await fetch(`${API_BASE_URL}/generate-diagram`, {
                     method: 'POST',
@@ -401,7 +384,15 @@
                 }
 
                 const data = await response.json();
+                console.log('📥 API 응답:', data);
+                
+                if (!data.mermaid_code) {
+                    throw new Error('API 응답에 mermaid_code가 없습니다.');
+                }
+                
                 currentMermaidCode = data.mermaid_code;
+                console.log('🎯 Mermaid 코드:', currentMermaidCode);
+                
                 await renderMermaidDiagram(currentMermaidCode);
                 showDiagramActions();
 
@@ -414,56 +405,141 @@
                         <strong>현재 API URL:</strong> ${API_BASE_URL}<br><br>
                         <em>배포가 완료되었는지 확인하거나 잠시 후 다시 시도해주세요.</em>`);
                 } else {
-                    showError('다이어그램 생성에 실패했습니다. 다시 시도해주세요.');
+                    showError('다이어그램 생성에 실패했습니다.<br><br>' + 
+                             '<strong>오류:</strong> ' + error.message);
                 }
             }
         }
 
-        // Mermaid 다이어그램 렌더링
+        // Mermaid 다이어그램 렌더링 - 안정적인 방식
         async function renderMermaidDiagram(code) {
             const container = document.getElementById('diagramContainer');
-            const diagramId = 'diagram-' + Date.now();
+            
+            if (!container) {
+                console.error('❌ 다이어그램 컨테이너를 찾을 수 없습니다');
+                hideLoading();
+                return;
+            }
             
             try {
-                container.innerHTML = `<div id="${diagramId}">${code}</div>`;
-                await mermaid.init(undefined, `#${diagramId}`);
+                console.log('🎨 Mermaid 코드 렌더링 시작:', code);
+                
+                // 기존 다이어그램 제거
+                container.innerHTML = '';
+                
+                // 고유 ID 생성
+                mermaidCounter++;
+                const graphDefinition = `mermaid-${mermaidCounter}`;
+                
+                console.log('🔧 Mermaid render 시도...');
+                
+                // mermaid.render 방식 사용 (가장 안정적)
+                const renderResult = await mermaid.render(graphDefinition, code);
+                
+                // SVG 삽입
+                const svgContainer = document.createElement('div');
+                svgContainer.style.textAlign = 'center';
+                svgContainer.style.padding = '20px';
+                svgContainer.innerHTML = renderResult.svg;
+                
+                container.appendChild(svgContainer);
+                
+                console.log('✅ Mermaid 렌더링 완료');
                 hideLoading();
+                
             } catch (error) {
-                console.error('Mermaid rendering error:', error);
-                showError('다이어그램 렌더링에 실패했습니다.');
+                console.error('❌ mermaid.render 실패:', error);
+                
+                // 대체 방법: 전통적인 방식
+                try {
+                    console.log('� 대체 방법 시도...');
+                    
+                    mermaidCounter++;
+                    const fallbackId = `mermaid-fallback-${mermaidCounter}`;
+                    
+                    // 컨테이너에 Mermaid 코드 직접 삽입
+                    container.innerHTML = `
+                        <div id="${fallbackId}" class="mermaid" style="text-align: center; padding: 20px;">
+                            ${code}
+                        </div>
+                    `;
+                    
+                    // DOM 렌더링 대기
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
+                    // 요소 확인
+                    const mermaidElement = document.getElementById(fallbackId);
+                    if (!mermaidElement) {
+                        throw new Error('Mermaid 요소를 찾을 수 없습니다.');
+                    }
+                    
+                    // 기존 처리 상태 제거
+                    mermaidElement.removeAttribute('data-processed');
+                    
+                    // mermaid.init 호출
+                    mermaid.init(undefined, mermaidElement);
+                    
+                    console.log('✅ 대체 방법으로 렌더링 완료');
+                    hideLoading();
+                    
+                } catch (fallbackError) {
+                    console.error('❌ 모든 렌더링 방법 실패:', fallbackError);
+                    
+                    // 최종 대체: 텍스트 형태로라도 표시
+                    showError(`다이어그램 렌더링에 실패했습니다.<br><br>
+                        <strong>오류 1:</strong> ${error.message}<br>
+                        <strong>오류 2:</strong> ${fallbackError.message}<br><br>
+                        <strong>Mermaid 코드:</strong><br>
+                        <pre style="text-align: left; background: #f5f5f5; padding: 15px; border-radius: 4px; font-size: 12px; overflow-x: auto; margin: 10px 0;">${code}</pre>
+                        <br><small>💡 이 코드를 <a href="https://mermaid.live" target="_blank">mermaid.live</a>에서 직접 테스트해보세요.</small>`);
+                }
             }
         }
 
         // 로딩 표시
         function showLoading() {
-            document.getElementById('placeholder').style.display = 'none';
-            document.getElementById('loading').style.display = 'flex';
-            document.getElementById('btnText').textContent = '생성 중...';
-            document.querySelector('.generate-btn').disabled = true;
+            const placeholderElement = document.getElementById('placeholder');
+            const loadingElement = document.getElementById('loading');
+            const btnTextElement = document.getElementById('btnText');
+            const buttonElement = document.querySelector('.generate-btn');
+            
+            if (placeholderElement) placeholderElement.style.display = 'none';
+            if (loadingElement) loadingElement.style.display = 'flex';
+            if (btnTextElement) btnTextElement.textContent = '생성 중...';
+            if (buttonElement) buttonElement.disabled = true;
         }
 
         // 로딩 숨기기
         function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('btnText').textContent = '다이어그램 생성';
-            document.querySelector('.generate-btn').disabled = false;
+            const loadingElement = document.getElementById('loading');
+            const btnTextElement = document.getElementById('btnText');
+            const buttonElement = document.querySelector('.generate-btn');
+            
+            if (loadingElement) loadingElement.style.display = 'none';
+            if (btnTextElement) btnTextElement.textContent = '다이어그램 생성';
+            if (buttonElement) buttonElement.disabled = false;
         }
 
         // 다이어그램 액션 버튼 표시
         function showDiagramActions() {
-            document.getElementById('diagramActions').style.display = 'flex';
+            const actionsElement = document.getElementById('diagramActions');
+            if (actionsElement) {
+                actionsElement.style.display = 'flex';
+            }
         }
 
         // 에러 표시
         function showError(message) {
             const container = document.getElementById('diagramContainer');
-            container.innerHTML = `
-                <div class="placeholder">
-                    <div class="placeholder-icon">⚠️</div>
-                    <h3>오류가 발생했습니다</h3>
-                    <div style="text-align: left; max-width: 400px; margin: 0 auto;">${message}</div>
-                </div>
-            `;
+            if (container) {
+                container.innerHTML = `
+                    <div class="placeholder">
+                        <div class="placeholder-icon">⚠️</div>
+                        <h3>오류가 발생했습니다</h3>
+                        <div style="text-align: left; max-width: 400px; margin: 0 auto;">${message}</div>
+                    </div>
+                `;
+            }
             hideLoading();
         }
 
@@ -524,6 +600,65 @@
                 });
             }
         }
+
+        // 디버깅용 테스트 함수
+        function testMermaidCode() {
+            const testCode = `graph TB
+    A[User] --> B[Load Balancer]
+    B --> C[Cloud Run]
+    C --> D[Cloud SQL]
+    C --> E[Cloud Storage]`;
+            
+            console.log('🧪 테스트 Mermaid 코드 렌더링...');
+            currentMermaidCode = testCode;
+            showLoading();
+            renderMermaidDiagram(testCode).then(() => {
+                showDiagramActions();
+                console.log('🧪 테스트 완료');
+            }).catch(error => {
+                console.error('🧪 테스트 렌더링 실패:', error);
+            });
+        }
+
+        // 간단한 다이어그램 테스트 함수
+        function testSimpleDiagram() {
+            const simpleCode = `graph LR
+    A --> B
+    B --> C`;
+            
+            console.log('🧪 간단한 다이어그램 테스트...');
+            currentMermaidCode = simpleCode;
+            showLoading();
+            renderMermaidDiagram(simpleCode).then(() => {
+                showDiagramActions();
+                console.log('🧪 간단한 테스트 완료');
+            }).catch(error => {
+                console.error('🧪 간단한 테스트도 실패:', error);
+            });
+        }
+
+        // 즉시 테스트 함수 (페이지 로드 후)
+        function immediateTest() {
+            console.log('🚀 즉시 테스트 시작...');
+            setTimeout(() => {
+                testSimpleDiagram();
+            }, 1000);
+        }
+
+        // 페이지 로드 시 디버깅 도구 추가
+        window.addEventListener('load', () => {
+            console.log('🎯 페이지 로드 완료');
+            console.log('🔧 사용 가능한 디버깅 함수들:');
+            console.log('  - window.testMermaidCode() : 복잡한 다이어그램 테스트');
+            console.log('  - window.testSimpleDiagram() : 간단한 다이어그램 테스트');
+            console.log('  - window.immediateTest() : 즉시 테스트 실행');
+            console.log('  - Mermaid 버전:', mermaid.version || 'unknown');
+            
+            // 개발자 도구에서 테스트할 수 있도록 전역 함수로 노출
+            window.testMermaidCode = testMermaidCode;
+            window.testSimpleDiagram = testSimpleDiagram;
+            window.immediateTest = immediateTest;
+        });
     </script>
 </body>
 </html>
