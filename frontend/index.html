@@ -142,7 +142,7 @@
         }
 
         .loading {
-            display: flex;
+            display: flex !important;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -159,12 +159,12 @@
             min-height: 400px;
             visibility: hidden;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: all 0.3s ease;
         }
 
         .loading.show {
-            visibility: visible;
-            opacity: 1;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         .spinner {
@@ -607,15 +607,29 @@
                 console.log('✅ actions 숨김');
             }
             
-            // 로딩 표시 - 클래스 사용으로 부드러운 전환
+            // 로딩 표시 - 클래스와 인라인 스타일 모두 사용
             if (loadingElement) {
+                // 클래스 추가
                 loadingElement.classList.add('show');
-                console.log('✅ 로딩 스피너 표시');
+                
+                // 인라인 스타일도 강제로 설정 (CSS 우선순위 무시)
+                loadingElement.style.display = 'flex';
+                loadingElement.style.visibility = 'visible';
+                loadingElement.style.opacity = '1';
+                loadingElement.style.zIndex = '1000';
+                
+                console.log('✅ 로딩 스피너 표시 (클래스 + 인라인 스타일)');
                 
                 // 디버깅: 로딩 요소의 실제 크기와 위치 확인
-                const rect = loadingElement.getBoundingClientRect();
-                console.log('📏 로딩 요소 크기:', rect.width, 'x', rect.height);
-                console.log('📍 로딩 요소 위치:', rect.left, rect.top);
+                setTimeout(() => {
+                    const rect = loadingElement.getBoundingClientRect();
+                    const computedStyle = window.getComputedStyle(loadingElement);
+                    console.log('📏 로딩 요소 크기:', rect.width, 'x', rect.height);
+                    console.log('📍 로딩 요소 위치:', rect.left, rect.top);
+                    console.log('🎨 계산된 스타일 - display:', computedStyle.display);
+                    console.log('🎨 계산된 스타일 - visibility:', computedStyle.visibility);
+                    console.log('🎨 계산된 스타일 - opacity:', computedStyle.opacity);
+                }, 100);
             } else {
                 console.error('❌ 로딩 요소를 찾을 수 없음');
             }
@@ -640,8 +654,14 @@
             console.log('🔄 로딩 숨김 시작');
 
             if (loadingElement) {
+                // 클래스 제거
                 loadingElement.classList.remove('show');
-                console.log('✅ 로딩 스피너 숨김');
+                
+                // 인라인 스타일로도 확실히 숨기기
+                loadingElement.style.visibility = 'hidden';
+                loadingElement.style.opacity = '0';
+                
+                console.log('✅ 로딩 스피너 숨김 (클래스 + 인라인 스타일)');
             }
             if (btnTextElement) {
                 btnTextElement.textContent = '다이어그램 생성';
@@ -830,6 +850,47 @@
             });
         }
 
+        // 로딩 스피너 테스트 함수
+        function testLoadingSpinner() {
+            console.log('🧪 로딩 스피너 직접 테스트...');
+            const loadingElement = document.getElementById('loading');
+            
+            if (!loadingElement) {
+                console.error('❌ 로딩 요소 없음');
+                return;
+            }
+            
+            console.log('📋 초기 상태:', {
+                display: window.getComputedStyle(loadingElement).display,
+                visibility: window.getComputedStyle(loadingElement).visibility,
+                opacity: window.getComputedStyle(loadingElement).opacity,
+                classes: loadingElement.className
+            });
+            
+            // 강제로 스피너 표시
+            loadingElement.style.display = 'flex';
+            loadingElement.style.visibility = 'visible';
+            loadingElement.style.opacity = '1';
+            loadingElement.style.zIndex = '1000';
+            loadingElement.classList.add('show');
+            
+            console.log('🔧 강제 표시 후 상태:', {
+                display: window.getComputedStyle(loadingElement).display,
+                visibility: window.getComputedStyle(loadingElement).visibility,
+                opacity: window.getComputedStyle(loadingElement).opacity,
+                classes: loadingElement.className,
+                rect: loadingElement.getBoundingClientRect()
+            });
+            
+            // 3초 후 숨기기
+            setTimeout(() => {
+                loadingElement.style.visibility = 'hidden';
+                loadingElement.style.opacity = '0';
+                loadingElement.classList.remove('show');
+                console.log('✅ 테스트 완료 - 스피너 숨김');
+            }, 3000);
+        }
+
         // 즉시 테스트 함수 (페이지 로드 후)
         function immediateTest() {
             console.log('🚀 즉시 테스트 시작...');
@@ -845,6 +906,7 @@
             console.log('  - window.testMermaidCode() : 복잡한 다이어그램 테스트');
             console.log('  - window.testSimpleDiagram() : 간단한 다이어그램 테스트');
             console.log('  - window.testAwsLogos() : AWS 로고 테스트');
+            console.log('  - window.testLoadingSpinner() : 로딩 스피너 직접 테스트');
             console.log('  - window.immediateTest() : 즉시 테스트 실행');
             console.log('  - Mermaid 버전:', mermaid.version || 'unknown');
 
@@ -852,6 +914,7 @@
             window.testMermaidCode = testMermaidCode;
             window.testSimpleDiagram = testSimpleDiagram;
             window.testAwsLogos = testAwsLogos;
+            window.testLoadingSpinner = testLoadingSpinner;
             window.immediateTest = immediateTest;
         });
     </script>
