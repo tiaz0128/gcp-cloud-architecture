@@ -34,13 +34,14 @@ def clean_mermaid_code(code: str) -> str:
         # 대괄호 안에 괄호가 있는 패턴을 찾아서 괄호를 다른 문자로 변환
         def replace_brackets_in_label(match):
             label_content = match.group(1)
-            # 괄호를 다른 문자로 변환 (예: () -> 〈〉 또는 - -)
+            # 괄호와 꺾쇠괄호를 다른 문자로 변환 (예: () -> 〈〉, <> -> ‹›)
             label_content = label_content.replace("(", "〈").replace(")", "〉")
+            label_content = label_content.replace("<", "‹").replace(">", "›")
             return f"[{label_content}]"
 
-        # 패턴: [내용(괄호포함)] 형태를 찾아서 변환
+        # 패턴: [내용(괄호포함)] 또는 [내용<꺾쇠괄호포함>] 형태를 찾아서 변환
         line = re.sub(
-            r"\[([^\[\]]*\([^\[\]]*\)[^\[\]]*)\]", replace_brackets_in_label, line
+            r"\[([^\[\]]*[\(\)<>][^\[\]]*)\]", replace_brackets_in_label, line
         )
 
         # architecture-beta 구문에서는 기본적으로 안전한 구문 사용
