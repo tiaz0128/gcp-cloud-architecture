@@ -35,7 +35,7 @@ def clean_mermaid_code(code: str) -> str:
         def clean_special_chars_in_label(match):
             label_content = match.group(1)
             # 특수문자를 공백으로 변환 후 여러 공백을 하나로 정리
-            # 영문자, 숫자, 한글, 공백, 하이픈, 언더스코어만 남기고 나머지 제거
+            # 영문자, 숫자, 공백, 하이픈, 언더스코어만 남기고 나머지 제거
             cleaned_content = re.sub(r"[^\w\s\-]", " ", label_content)
             # 여러 공백을 하나로 정리하고 앞뒤 공백 제거
             cleaned_content = re.sub(r"\s+", " ", cleaned_content).strip()
