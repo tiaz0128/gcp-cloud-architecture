@@ -7,10 +7,10 @@ AI 기반 클라우드 아키텍처 다이어그램 자동 생성 웹 애플리�
 - **🤖 AI 기반 다이어그램 생성**: Google Gemini를 사용한 자동 아키텍처 다이어그램 생성
 - **☁️ 다중 클라우드 지원**: GCP, AWS, Azure 아키텍처 지원
 - **📊 실시간 시각화**: Mermaid.js architecture-beta 기반 즉시 렌더링
-- **💾 다이어그램 관리**: Firestore를 통한 다이어그램 저장/조회/수정/삭제
-- **📥 다운로드 기능**: SVG/PNG 형식으로 다이어그램 내보내기
-- **📋 코드 복사**: Mermaid 코드 클립보드 복사
-- **🎨 클라우드 아이콘**: 각 클라우드 제공자별 공식 아이콘 지원
+- 📥 다운로드 기능: SVG/PNG 형식으로 다이어그램 내보내기
+- 📋 코드 복사: Mermaid 코드 클립보드 복사
+- 🎨 클라우드 아이콘: 각 클라우드 제공자별 공식 아이콘 지원
+- ~~💾 다이어그램 관리: Firestore를 통한 다이어그램 저장/조회/수정/삭제~~
 
 ## 🏗️ 프로젝트 구조
 
@@ -101,16 +101,6 @@ gcloud firestore databases create --region=asia-northeast3
 
 ### 4️⃣ 배포 실행
 
-#### 🔄 백엔드 + 프론트엔드 개별 배포
-```bash
-# 백엔드 배포
-./deploy-backend.sh
-
-# 프론트엔드 배포 (백엔드 배포 완료 후)
-./deploy-frontend.sh
-```
-
-#### ⚡ 빠른 재배포
 ```bash
 # 백엔드 코드 수정 후 빠른 재배포
 ./deploy-backend.sh
@@ -122,6 +112,7 @@ gcloud firestore databases create --region=asia-northeast3
 ## 🛠️ 기술 스택
 
 ### 백엔드 (FastAPI)
+
 - **🐍 Python 3.12+**: 최신 Python 기능 활용
 - **⚡ FastAPI**: 고성능 웹 프레임워크
 - **🤖 Google Vertex AI (Gemini 2.5-flash)**: AI 모델
@@ -131,12 +122,14 @@ gcloud firestore databases create --region=asia-northeast3
 - **☁️ Google Cloud Run**: 서버리스 컨테이너 플랫폼
 
 ### 프론트엔드 (Vanilla JavaScript)
+
 - **🌐 HTML5/CSS3/JavaScript**: 웹 표준 기술
 - **📊 Mermaid.js**: 다이어그램 렌더링 엔진
 - **🎯 Custom Icon Packs**: 클라우드 서비스별 아이콘
 - **☁️ Google Cloud Storage**: 정적 웹사이트 호스팅
 
 ### 인프라 (Google Cloud Platform)
+
 - **🏗️ Google Cloud Build**: CI/CD 파이프라인
 - **📦 Artifact Registry**: 컨테이너 이미지 저장소
 - **🌐 Cloud Storage**: 정적 파일 호스팅
@@ -208,7 +201,8 @@ uvicorn main:app --reload --port 8080
 ```
 
 **환경변수 설정** (`.env` 파일):
-```bash
+
+```text
 GOOGLE_CLOUD_PROJECT=your-project-id
 # 로컬 개발 시에는 Google Application Default Credentials 사용
 # gcloud auth application-default login
@@ -331,36 +325,4 @@ Content-Type: application/json
   "cloud_provider": "gcp", 
   "created_at": "2025-10-10T12:00:00"
 }
-```
-
-### � 주요 GCP 콘솔 링크
-
-- [Cloud Run 서비스](https://console.cloud.google.com/run)
-- [Cloud Storage 버킷](https://console.cloud.google.com/storage)  
-- [Firestore 데이터베이스](https://console.cloud.google.com/firestore)
-- [Cloud Build 히스토리](https://console.cloud.google.com/cloud-build)
-- [Vertex AI](https://console.cloud.google.com/vertex-ai)
-# Cloud Run 서비스 삭제
-gcloud run services delete cloud-diagram-generator --region=asia-northeast3
-
-# Cloud Storage 버킷 삭제
-gsutil rm -r gs://your-project-cloud-architecture-frontend
-
-# Artifact Registry 리포지토리 삭제 (선택사항)
-gcloud artifacts repositories delete cloud-run-source-deploy --location=asia-northeast3
-```
-
----
-
-**💡 문제가 발생하면?**
-
-1. Google Cloud 계정 및 프로젝트 설정 확인
-2. 필요한 API들이 활성화되어 있는지 확인
-3. `.env` 파일의 환경변수 설정 확인
-4. `gcloud auth list`로 인증 상태 확인
-
-### json 파일 재배포
-
-```bash
-gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" -h "Content-Type:application/json" gs://gleaming-modem-474701-f3-cloud-architecture-frontend/icons/*.json
 ```
