@@ -124,26 +124,32 @@ if [ -f "$TEMP_DIR/404.html" ]; then
     echo "✅ 404.html 캐시 설정 완료"
 fi
 
-# CSS 파일 설정 (적당한 캐시)
+# CSS 파일 설정 (no-cache로 즉시 업데이트)
 if [ -f "$TEMP_DIR/styles.css" ]; then
-    gsutil setmeta -h "Cache-Control:public, max-age=3600" \
+    gsutil setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" \
+        -h "Pragma:no-cache" \
+        -h "Expires:0" \
         -h "Content-Type:text/css" \
         gs://$BUCKET_NAME/styles.css
     echo "✅ styles.css 캐시 설정 완료"
 fi
 
-# JavaScript 파일 설정 (적당한 캐시)
+# JavaScript 파일 설정 (no-cache로 즉시 업데이트)
 if [ -f "$TEMP_DIR/app.js" ]; then
-    gsutil setmeta -h "Cache-Control:public, max-age=3600" \
+    gsutil setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" \
+        -h "Pragma:no-cache" \
+        -h "Expires:0" \
         -h "Content-Type:application/javascript" \
         gs://$BUCKET_NAME/app.js
     echo "✅ app.js 캐시 설정 완료"
 fi
 
-# JSON 아이콘 파일들 설정 (적당한 캐시)
+# JSON 아이콘 파일들 설정 (no-cache로 즉시 업데이트)
 if [ -d "$TEMP_DIR/icons" ]; then
     echo "🎨 아이콘 파일 캐시 설정..."
-    gsutil -m setmeta -h "Cache-Control:public, max-age=3600" \
+    gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" \
+        -h "Pragma:no-cache" \
+        -h "Expires:0" \
         -h "Content-Type:application/json" \
         gs://$BUCKET_NAME/icons/*.json 2>/dev/null || echo "ℹ️  JSON 아이콘 파일이 없습니다."
 fi

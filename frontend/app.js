@@ -65,11 +65,18 @@ function getApiBaseUrl() {
 
 // DOM manipulation
 function showLoading() {
-    // Hide other elements
+    const container = document.getElementById('diagramContainer');
     const placeholder = document.getElementById('placeholder');
     const actions = document.getElementById('diagramActions');
     const loading = document.getElementById('loading');
     
+    // Hide existing diagrams first
+    if (container) {
+        const existingDiagrams = container.querySelectorAll('div:not(#placeholder):not(#loading)');
+        existingDiagrams.forEach(diagram => diagram.style.display = 'none');
+    }
+    
+    // Hide other elements
     if (placeholder) placeholder.style.display = 'none';
     if (actions) actions.style.display = 'none';
     if (loading) loading.classList.add('show');
