@@ -77,23 +77,41 @@ function getApiBaseUrl() {
 
 // DOM manipulation
 function showLoading() {
+    console.log('showLoading 호출됨');
+    
     const container = document.getElementById('diagramContainer');
     const placeholder = document.getElementById('placeholder');
     const actions = document.getElementById('diagramActions');
     const loading = document.getElementById('loading');
     
-    // Hide existing diagrams first
+    // 모든 기존 다이어그램 완전히 제거
     if (container) {
         const existingDiagrams = container.querySelectorAll('div:not(#placeholder):not(#loading)');
-        existingDiagrams.forEach(diagram => diagram.style.display = 'none');
+        existingDiagrams.forEach(diagram => {
+            diagram.remove();
+        });
     }
     
-    // Hide other elements
-    if (placeholder) placeholder.style.display = 'none';
-    if (actions) actions.style.display = 'none';
-    if (loading) loading.classList.add('show');
+    // 다른 요소들 숨기기
+    if (placeholder) {
+        placeholder.style.display = 'none';
+    }
+    if (actions) {
+        actions.style.display = 'none';
+    }
+    
+    // 로딩 스피너 강제로 표시
+    if (loading) {
+        loading.style.display = 'flex';
+        loading.classList.add('show');
+        // 확실히 맨 앞에 오도록 z-index 설정
+        loading.style.zIndex = '9999';
+        console.log('로딩 스피너 표시됨');
+    } else {
+        console.error('로딩 요소를 찾을 수 없습니다');
+    }
 
-    // Update button
+    // 버튼 상태 업데이트
     const btnText = document.getElementById('btnText');
     const button = document.querySelector('.generate-btn');
     if (btnText) btnText.textContent = '생성 중...';
@@ -101,10 +119,16 @@ function showLoading() {
 }
 
 function hideLoading() {
+    console.log('hideLoading 호출됨');
+    
     const loading = document.getElementById('loading');
-    if (loading) loading.classList.remove('show');
+    if (loading) {
+        loading.style.display = 'none';
+        loading.classList.remove('show');
+        console.log('로딩 스피너 숨김');
+    }
 
-    // Reset button
+    // 버튼 상태 복원
     const btnText = document.getElementById('btnText');
     const button = document.querySelector('.generate-btn');
     if (btnText) btnText.textContent = '다이어그램 생성';
@@ -119,12 +143,14 @@ function showDiagramActions() {
 }
 
 function showError(message) {
-    hideLoading();
+    console.log('showError 호출됨');
+    hideLoading(); // 확실히 로딩 상태 종료
     
     const container = document.getElementById('diagramContainer');
     const placeholder = document.getElementById('placeholder');
 
     if (container) {
+        // 기존 다이어그램 모두 제거
         const existingDiagrams = container.querySelectorAll('div:not(#placeholder):not(#loading)');
         existingDiagrams.forEach(diagram => diagram.remove());
 
@@ -148,10 +174,13 @@ async function generateDiagram() {
         diagram_type: CONFIG.DIAGRAM_TYPE
     };
 
+    console.log('다이어그램 생성 시작');
     showLoading();
 
     try {
         const API_BASE_URL = getApiBaseUrl();
+        console.log('API 요청 전송:', API_BASE_URL);
+        
         const response = await fetch(`${API_BASE_URL}/generate-diagram`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -168,12 +197,14 @@ async function generateDiagram() {
             throw new Error('API 응답에 mermaid_code가 없습니다.');
         }
 
+        console.log('API 응답 성공, 다이어그램 렌더링 시작');
         currentMermaidCode = data.mermaid_code;
         await renderMermaidDiagram(currentMermaidCode);
         showDiagramActions();
 
     } catch (error) {
         console.error('API 에러:', error);
+        hideLoading(); // 에러 발생 시 확실히 로딩 숨김
         
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             showError(`API 서버에 연결할 수 없습니다.<br><br>
@@ -391,6 +422,15 @@ function initializeApp() {
     // Initialize SVG controls
     initializeSVGControls();
 
+    // 테스트용: 스피너 상태 확인
+    const loading = document.getElementById('loading');
+    if (loading) {
+        console.log('로딩 요소 발견:', loading);
+        console.log('초기 display 스타일:', window.getComputedStyle(loading).display);
+    } else {
+        console.error('로딩 요소를 찾을 수 없습니다!');
+    }
+
     console.log('앱 초기화 완료');
     console.log('API URL:', getApiBaseUrl());
 }
@@ -529,3 +569,36 @@ function dragTouch(e) {
 
 // Start app when DOM is loaded
 document.addEventListener('DOMContentLoaded', initializeApp);
+
+// 테스트 함수
+function testSpinner() {
+    console.log('스피너 테스트 시작');
+    const loading = document.getElementById('loading');
+    
+    if (!loading) {
+        console.error('로딩 요소를 찾을 수 없습니다!');
+        alert('로딩 요소를 찾을 수 없습니다!');
+        return;
+    }
+    
+    console.log('현재 로딩 요소 상태:');
+    console.log('- display:', window.getComputedStyle(loading).display);
+    console.log('- classList:', loading.classList.toString());
+    console.log('- style.display:', loading.style.display);
+    
+    // 수동으로 스피너 표시
+    loading.style.display = 'flex';
+    loading.classList.add('show');
+    loading.style.zIndex = '9999';
+    
+    console.log('스피너 표시 후:');
+    console.log('- display:', window.getComputedStyle(loading).display);
+    console.log('- classList:', loading.classList.toString());
+    
+    // 3초 후 숨김
+    setTimeout(() => {
+        loading.style.display = 'none';
+        loading.classList.remove('show');
+        console.log('스피너 숨김 완료');
+    }, 3000);
+}
