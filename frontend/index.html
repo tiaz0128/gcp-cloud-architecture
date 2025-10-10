@@ -142,7 +142,7 @@
         }
 
         .loading {
-            display: none;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -157,6 +157,14 @@
             border-radius: 12px;
             z-index: 1000;
             min-height: 400px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading.show {
+            visibility: visible;
+            opacity: 1;
         }
 
         .spinner {
@@ -599,12 +607,9 @@
                 console.log('✅ actions 숨김');
             }
             
-            // 로딩 표시 - 강제로 확실히 보이도록 설정
+            // 로딩 표시 - 클래스 사용으로 부드러운 전환
             if (loadingElement) {
-                loadingElement.style.display = 'flex';
-                loadingElement.style.visibility = 'visible';
-                loadingElement.style.opacity = '1';
-                loadingElement.style.zIndex = '1000';
+                loadingElement.classList.add('show');
                 console.log('✅ 로딩 스피너 표시');
                 
                 // 디버깅: 로딩 요소의 실제 크기와 위치 확인
@@ -635,9 +640,7 @@
             console.log('🔄 로딩 숨김 시작');
 
             if (loadingElement) {
-                loadingElement.style.display = 'none';
-                loadingElement.style.visibility = 'hidden';
-                loadingElement.style.opacity = '0';
+                loadingElement.classList.remove('show');
                 console.log('✅ 로딩 스피너 숨김');
             }
             if (btnTextElement) {
