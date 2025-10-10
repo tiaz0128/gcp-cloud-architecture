@@ -191,14 +191,15 @@ async def generate_diagram(request: DiagramRequest):
            
         5. **아이콘 참고**:
            - <provider>:아이콘명 형식 사용
-           - GCP: gcp:google-cloud, gcp:cloud-run, gcp:cloud-storage
+           - 서비스 / 리소스명은 _(언더스코어)로 연결 (예: cloud_run, sql_database)
+           - GCP: gcp:google_cloud, gcp:cloud_run, gcp:cloud_storage
            - AWS: aws:aws, aws:ec2, aws:s3, aws:rds, aws:vpc, aws:cloudfront
-           - Azure: azr:azure, azr:functions, azr:sql-database
+           - Azure: azr:azure, azr:functions, azr:sql_database
 
         {request.cloud_provider.upper()} 주요 서비스 및 아이콘:
         - GCP: Compute Engine(gcp:compute_engine), Cloud Run(gcp:cloud_run), Cloud Storage(gcp:cloud_storage), Cloud SQL(gcp:cloud_sql), Firestore(gcp:firestore)
         - AWS: EC2(aws:ec2), Lambda(aws:lambda), S3(aws:s3), RDS(aws:rds), ALB(aws:elb), CloudFront(aws:cloudfront)
-        - Azure: App Service(azr:app-service), Functions(azr:functions), Blob Storage(azr:blob-storage), SQL Database(azr:sql-database)
+        - Azure: App Service(azr:app_service), Functions(azr:functions), Blob Storage(azr:blob_storage), SQL Database(azr:sql_database)
 
         **올바른 예시:**
         ```
