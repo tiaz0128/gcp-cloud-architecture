@@ -65,65 +65,55 @@ echo "🌐 백엔드 서비스 URL: $BACKEND_URL"
 TEMP_DIR=$(mktemp -d)
 echo "📁 임시 빌드 디렉토리: $TEMP_DIR"
 
-# 프론트엔드 파일들을 임시 디렉토리에 복사
+# 프론트엔드 폴더의 모든 파일들을 임시 디렉토리에 복사
 echo "📋 프론트엔드 파일 복사 중..."
-cp frontend/index.html $TEMP_DIR/
+echo "📂 frontend 폴더의 모든 파일을 복사합니다..."
 
-# 404 페이지가 있으면 복사
-if [ -f "frontend/404.html" ]; then
-    cp frontend/404.html $TEMP_DIR/
-    echo "✅ 404 에러 페이지 포함"
-fi
+# frontend 폴더의 모든 내용을 복사 (숨김 파일 포함)
+cp -r frontend/* $TEMP_DIR/ 2>/dev/null || true
+cp -r frontend/.[^.]* $TEMP_DIR/ 2>/dev/null || true
 
-# 커스텀 아이콘 파일들 복사
-if [ -d "frontend/icons" ]; then
-    cp -r frontend/icons $TEMP_DIR/
-    echo "✅ icons 디렉토리 포함"
-fi
-
-# 추가 정적 파일들이 있으면 복사
-if [ -d "frontend/assets" ]; then
-    cp -r frontend/assets $TEMP_DIR/
-    echo "✅ assets 디렉토리 포함"
-fi
+# 복사된 파일 목록 표시
+echo "✅ 복사된 파일 목록:"
+find $TEMP_DIR -type f | sed "s|$TEMP_DIR/|   • |g" | sort
 
 # 메타 태그에 백엔드 URL 설정
 echo "🔧 API URL 자동 설정 중..."
-# 기존 메타 태그가 있으면 교체, 없으면 head 섹션에 추가
-if grep -q "api-base-url" $TEMP_DIR/index.html; then
-    sed -i "s|<meta name=\"api-base-url\" content=\"[^\"]*\">|<meta name=\"api-base-url\" content=\"$BACKEND_URL\">|g" $TEMP_DIR/index.html
+# index.html이 있는 경우만 메타 태그 설정
+if [ -f "$TEMP_DIR/index.html" ]; then
+    # 기존 메타 태그가 있으면 교체, 없으면 head 섹션에 추가
+    if grep -q "api-base-url" $TEMP_DIR/index.html; then
+        sed -i "s|<meta name=\"api-base-url\" content=\"[^\"]*\">|<meta name=\"api-base-url\" content=\"$BACKEND_URL\">|g" $TEMP_DIR/index.html
+    else
+        # head 섹션 끝에 메타 태그 추가
+        sed -i "s|</head>|    <meta name=\"api-base-url\" content=\"$BACKEND_URL\">\n</head>|g" $TEMP_DIR/index.html
+    fi
+    echo "✅ index.html에 API URL 설정 완료"
 else
-    # head 섹션 끝에 메타 태그 추가
-    sed -i "s|</head>|    <meta name=\"api-base-url\" content=\"$BACKEND_URL\">\n</head>|g" $TEMP_DIR/index.html
+    echo "⚠️  index.html을 찾을 수 없어 API URL 설정을 건너뜁니다."
 fi
 
-# 기존 HTML 파일들 완전 삭제 (캐시 문제 해결)
-echo "🗑️  기존 HTML 파일들 완전 삭제 중 (캐시 초기화)..."
-gsutil rm gs://$BUCKET_NAME/index.html 2>/dev/null || echo "ℹ️  기존 index.html이 없습니다."
-gsutil rm gs://$BUCKET_NAME/404.html 2>/dev/null || echo "ℹ️  기존 404.html이 없습니다."
+# 기존 파일들 완전 삭제 (캐시 문제 해결)
+echo "🗑️  기존 파일들 완전 삭제 중 (캐시 초기화)..."
+gsutil -m rm -r gs://$BUCKET_NAME/** 2>/dev/null || echo "ℹ️  삭제할 기존 파일이 없습니다."
 
 echo "📤 프론트엔드 파일을 Cloud Storage에 새로 업로드 중..."
 
-# HTML과 404 파일을 새로 업로드
-gsutil cp $TEMP_DIR/index.html gs://$BUCKET_NAME/
+# 모든 파일을 업로드
+gsutil -m cp -r $TEMP_DIR/* gs://$BUCKET_NAME/
 
-if [ -f "$TEMP_DIR/404.html" ]; then
-    gsutil cp $TEMP_DIR/404.html gs://$BUCKET_NAME/
+# 적절한 MIME 타입과 캐시 설정
+echo "📄 파일별 MIME 타입 및 캐시 설정..."
+
+# HTML 파일 설정 (no-cache로 즉시 업데이트)
+if [ -f "$TEMP_DIR/index.html" ]; then
+    gsutil setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" \
+        -h "Pragma:no-cache" \
+        -h "Expires:0" \
+        -h "Content-Type:text/html; charset=utf-8" \
+        gs://$BUCKET_NAME/index.html
+    echo "✅ index.html 캐시 설정 완료"
 fi
-
-# 아이콘 파일이 있으면 업데이트
-if [ -d "$TEMP_DIR/icons" ]; then
-    echo "🎨 아이콘 파일 업데이트 중..."
-    gsutil -m cp -r $TEMP_DIR/icons/* gs://$BUCKET_NAME/icons/
-fi
-
-# HTML 파일에 no-cache 설정 (즉시 업데이트)
-echo "📄 HTML 파일 no-cache 설정..."
-gsutil setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" \
-    -h "Pragma:no-cache" \
-    -h "Expires:0" \
-    -h "Content-Type:text/html; charset=utf-8" \
-    gs://$BUCKET_NAME/index.html
 
 if [ -f "$TEMP_DIR/404.html" ]; then
     gsutil setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" \
@@ -131,6 +121,31 @@ if [ -f "$TEMP_DIR/404.html" ]; then
         -h "Expires:0" \
         -h "Content-Type:text/html; charset=utf-8" \
         gs://$BUCKET_NAME/404.html
+    echo "✅ 404.html 캐시 설정 완료"
+fi
+
+# CSS 파일 설정 (적당한 캐시)
+if [ -f "$TEMP_DIR/styles.css" ]; then
+    gsutil setmeta -h "Cache-Control:public, max-age=3600" \
+        -h "Content-Type:text/css" \
+        gs://$BUCKET_NAME/styles.css
+    echo "✅ styles.css 캐시 설정 완료"
+fi
+
+# JavaScript 파일 설정 (적당한 캐시)
+if [ -f "$TEMP_DIR/app.js" ]; then
+    gsutil setmeta -h "Cache-Control:public, max-age=3600" \
+        -h "Content-Type:application/javascript" \
+        gs://$BUCKET_NAME/app.js
+    echo "✅ app.js 캐시 설정 완료"
+fi
+
+# JSON 아이콘 파일들 설정 (적당한 캐시)
+if [ -d "$TEMP_DIR/icons" ]; then
+    echo "🎨 아이콘 파일 캐시 설정..."
+    gsutil -m setmeta -h "Cache-Control:public, max-age=3600" \
+        -h "Content-Type:application/json" \
+        gs://$BUCKET_NAME/icons/*.json 2>/dev/null || echo "ℹ️  JSON 아이콘 파일이 없습니다."
 fi
 
 # 임시 디렉토리 정리
