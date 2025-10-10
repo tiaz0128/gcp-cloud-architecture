@@ -69,7 +69,7 @@ except Exception as e:
 try:
     project_id = get_project_id()
     vertexai.init(project=project_id, location="asia-northeast3")
-    model = GenerativeModel("gemini-1.5-flash")
+    model = GenerativeModel("gemini-2.5-flash")
     logger.info("Vertex AI 초기화 성공")
 except Exception as e:
     logger.error(f"Vertex AI 초기화 실패: {e}")

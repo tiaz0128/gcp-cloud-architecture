@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- API Base URL 설정 (배포 시 환경에 맞게 수정) -->
+    <!-- <meta name="api-base-url" content="https://backend-service-url.run.app"> -->
     <title>Cloud Architecture Diagram Generator</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <style>
@@ -317,7 +319,54 @@
         });
 
         let currentMermaidCode = '';
-        const API_BASE_URL = 'http://localhost:8000'; // 로컬 개발용
+        
+        // 환경에 따른 API URL 자동 설정
+        function getApiBaseUrl() {
+            // 환경 변수나 메타 태그에서 API URL 확인 (최우선)
+            const metaApiUrl = document.querySelector('meta[name="api-base-url"]');
+            if (metaApiUrl && metaApiUrl.content) {
+                return metaApiUrl.content;
+            }
+            
+            // 현재 도메인이 localhost인 경우 로컬 개발 환경
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:8080';
+            }
+            
+            // 프로덕션 환경에서는 현재 도메인 기반으로 API URL 구성
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            
+            // Cloud Storage 호스팅의 경우 (.storage.googleapis.com 또는 storage.googleapis.com)
+            if (hostname.includes('storage.googleapis.com')) {
+                // Cloud Storage에서 호스팅되는 경우, 메타 태그가 없으면 기본 백엔드 URL 패턴 사용
+                // 일반적으로 배포 스크립트에서 메타 태그를 설정하므로 이 경우는 드물어야 함
+                console.warn('Cloud Storage 호스팅에서 API URL이 메타 태그로 설정되지 않았습니다.');
+                return 'https://cloud-diagram-generator-asia-northeast3.run.app';
+            }
+            
+            // Cloud Run의 경우 백엔드 서비스 URL 패턴
+            // 예: frontend가 https://storage.googleapis.com이면 backend는 https://backend-xxx.run.app
+            if (hostname.includes('.run.app')) {
+                const backendHostname = hostname.replace('frontend-', 'backend-');
+                return `${protocol}//${backendHostname}`;
+            }
+            
+            // 일반적인 경우: 같은 호스트의 다른 포트 또는 API 경로
+            // 포트 8080을 사용하거나 /api 경로 사용
+            if (window.location.port) {
+                return `${protocol}//${hostname}:8080`;
+            } else {
+                // 포트가 없는 경우 /api 경로 사용 (예: nginx 프록시 환경)
+                return `${protocol}//${hostname}/api`;
+            }
+        }
+        
+        const API_BASE_URL = getApiBaseUrl();
+        
+        // 디버깅을 위한 API URL 확인
+        console.log('🔗 API Base URL:', API_BASE_URL);
+        console.log('🌍 Current hostname:', window.location.hostname);
 
         // 폼 제출 이벤트
         document.getElementById('diagramForm').addEventListener('submit', async (e) => {
@@ -337,6 +386,8 @@
             showLoading();
 
             try {
+                console.log('📤 API 요청:', `${API_BASE_URL}/generate-diagram`);
+                
                 const response = await fetch(`${API_BASE_URL}/generate-diagram`, {
                     method: 'POST',
                     headers: {
@@ -355,8 +406,16 @@
                 showDiagramActions();
 
             } catch (error) {
-                console.error('Error:', error);
-                showError('다이어그램 생성에 실패했습니다. 다시 시도해주세요.');
+                console.error('❌ API 에러:', error);
+                
+                // 네트워크 오류인지 확인
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showError(`API 서버에 연결할 수 없습니다.<br><br>
+                        <strong>현재 API URL:</strong> ${API_BASE_URL}<br><br>
+                        <em>배포가 완료되었는지 확인하거나 잠시 후 다시 시도해주세요.</em>`);
+                } else {
+                    showError('다이어그램 생성에 실패했습니다. 다시 시도해주세요.');
+                }
             }
         }
 
@@ -402,7 +461,7 @@
                 <div class="placeholder">
                     <div class="placeholder-icon">⚠️</div>
                     <h3>오류가 발생했습니다</h3>
-                    <p>${message}</p>
+                    <div style="text-align: left; max-width: 400px; margin: 0 auto;">${message}</div>
                 </div>
             `;
             hideLoading();
