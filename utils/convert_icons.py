@@ -132,10 +132,7 @@ def process_multiple_svgs(
             print(f"✗ {icon_name} 변환 실패: {e}")
 
     # 최종 결과 구조 생성
-    result = {
-        "prefix": prefix,
-        "icons": all_icons
-    }
+    result = {"prefix": prefix, "icons": all_icons}
 
     # 파일로 출력
     if output_file:
