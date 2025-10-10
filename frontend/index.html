@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Architecture Diagram Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            min-height: 600px;
+        }
+
+        .input-panel {
+            background: #f8fafc;
+            padding: 30px;
+            border-right: 2px solid #e2e8f0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group textarea, 
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .form-group textarea:focus, 
+        .form-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .diagram-panel {
+            padding: 30px;
+            background: white;
+        }
+
+        .diagram-container {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #cbd5e0;
+        }
+
+        .placeholder {
+            text-align: center;
+            color: #64748b;
+        }
+
+        .placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            color: #4facfe;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .diagram-actions {
+            margin-top: 20px;
+            display: none;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: #4f46e5;
+        }
+
+        .examples {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f9ff;
+            border-radius: 8px;
+        }
+
+        .examples h3 {
+            color: #0369a1;
+            margin-bottom: 15px;
+        }
+
+        .example-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .example-item:hover {
+            background: #e0f2fe;
+        }
+
+        .mermaid {
+            background: white !important;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-panel {
+                border-right: none;
+                border-bottom: 2px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ Cloud Architecture Diagram Generator</h1>
+            <p>AI로 클라우드 아키텍처를 간단하게 시각화하세요</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-panel">
+                <form id="diagramForm">
+                    <div class="form-group">
+                        <label for="description">아키텍처 설명</label>
+                        <textarea 
+                            id="description" 
+                            name="description" 
+                            placeholder="예: FastAPI 앱을 Cloud Run으로 배포하고, Firestore를 데이터베이스로 사용합니다. 사용자는 Load Balancer를 통해 접근합니다."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cloudProvider">클라우드 제공자</label>
+                        <select id="cloudProvider" name="cloud_provider">
+                            <option value="gcp">Google Cloud Platform</option>
+                            <option value="aws">Amazon Web Services</option>
+                            <option value="azure">Microsoft Azure</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="diagramType">다이어그램 타입</label>
+                        <select id="diagramType" name="diagram_type">
+                            <option value="flowchart">플로우차트</option>
+                            <option value="sequence">시퀀스 다이어그램</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="generate-btn">
+                        <span id="btnText">다이어그램 생성</span>
+                    </button>
+                </form>
+
+                <div class="examples">
+                    <h3>예시 템플릿</h3>
+                    <div class="example-item" onclick="setExample('웹 애플리케이션을 GCP Cloud Run으로 배포하고, Cloud SQL을 데이터베이스로 사용합니다. 앞에 Load Balancer가 있고 정적 파일은 Cloud Storage에 저장됩니다.')">
+                        📱 웹 앱 + 데이터베이스
+                    </div>
+                    <div class="example-item" onclick="setExample('마이크로서비스 아키텍처로 API Gateway를 통해 여러 서비스에 라우팅하고, 각 서비스는 독립적인 데이터베이스를 가집니다.')">
+                        🔧 마이크로서비스 아키텍처
+                    </div>
+                    <div class="example-item" onclick="setExample('데이터 파이프라인을 구축합니다. Cloud Storage에서 데이터를 읽어 BigQuery로 처리하고 결과를 시각화합니다.')">
+                        📊 데이터 파이프라인
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-panel">
+                <div class="diagram-container" id="diagramContainer">
+                    <div class="placeholder" id="placeholder">
+                        <div class="placeholder-icon">📊</div>
+                        <h3>다이어그램이 여기에 표시됩니다</h3>
+                        <p>왼쪽 패널에서 아키텍처를 설명하고 '다이어그램 생성' 버튼을 클릭하세요.</p>
+                    </div>
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>AI가 다이어그램을 생성하고 있습니다...</p>
+                    </div>
+                </div>
+                <div class="diagram-actions" id="diagramActions">
+                    <button class="action-btn" onclick="downloadDiagram('svg')">SVG 다운로드</button>
+                    <button class="action-btn" onclick="downloadDiagram('png')">PNG 다운로드</button>
+                    <button class="action-btn" onclick="copyMermaidCode()">코드 복사</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mermaid 초기화
+        mermaid.initialize({ 
+            startOnLoad: false,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#4facfe',
+                primaryTextColor: '#374151',
+                primaryBorderColor: '#e2e8f0',
+                lineColor: '#6b7280',
+                secondaryColor: '#f3f4f6',
+                tertiaryColor: '#f9fafb'
+            }
+        });
+
+        let currentMermaidCode = '';
+        const API_BASE_URL = 'http://localhost:8000'; // 로컬 개발용
+
+        // 폼 제출 이벤트
+        document.getElementById('diagramForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await generateDiagram();
+        });
+
+        // 다이어그램 생성
+        async function generateDiagram() {
+            const formData = new FormData(document.getElementById('diagramForm'));
+            const requestData = {
+                description: formData.get('description'),
+                cloud_provider: formData.get('cloud_provider'),
+                diagram_type: formData.get('diagram_type')
+            };
+
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/generate-diagram`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                currentMermaidCode = data.mermaid_code;
+                await renderMermaidDiagram(currentMermaidCode);
+                showDiagramActions();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('다이어그램 생성에 실패했습니다. 다시 시도해주세요.');
+            }
+        }
+
+        // Mermaid 다이어그램 렌더링
+        async function renderMermaidDiagram(code) {
+            const container = document.getElementById('diagramContainer');
+            const diagramId = 'diagram-' + Date.now();
+            
+            try {
+                container.innerHTML = `<div id="${diagramId}">${code}</div>`;
+                await mermaid.init(undefined, `#${diagramId}`);
+                hideLoading();
+            } catch (error) {
+                console.error('Mermaid rendering error:', error);
+                showError('다이어그램 렌더링에 실패했습니다.');
+            }
+        }
+
+        // 로딩 표시
+        function showLoading() {
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('btnText').textContent = '생성 중...';
+            document.querySelector('.generate-btn').disabled = true;
+        }
+
+        // 로딩 숨기기
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('btnText').textContent = '다이어그램 생성';
+            document.querySelector('.generate-btn').disabled = false;
+        }
+
+        // 다이어그램 액션 버튼 표시
+        function showDiagramActions() {
+            document.getElementById('diagramActions').style.display = 'flex';
+        }
+
+        // 에러 표시
+        function showError(message) {
+            const container = document.getElementById('diagramContainer');
+            container.innerHTML = `
+                <div class="placeholder">
+                    <div class="placeholder-icon">⚠️</div>
+                    <h3>오류가 발생했습니다</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+            hideLoading();
+        }
+
+        // 예시 템플릿 설정
+        function setExample(text) {
+            document.getElementById('description').value = text;
+        }
+
+        // 다이어그램 다운로드
+        function downloadDiagram(format) {
+            const svg = document.querySelector('#diagramContainer svg');
+            if (!svg) return;
+
+            if (format === 'svg') {
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml'});
+                const svgUrl = URL.createObjectURL(svgBlob);
+                const link = document.createElement('a');
+                link.href = svgUrl;
+                link.download = 'cloud-architecture.svg';
+                link.click();
+                URL.revokeObjectURL(svgUrl);
+            } else if (format === 'png') {
+                // SVG를 Canvas로 변환 후 PNG 다운로드
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                const svgData = new XMLSerializer().serializeToString(svg);
+                const svgBlob = new Blob([svgData], {type: 'image/svg+xml'});
+                const svgUrl = URL.createObjectURL(svgBlob);
+                
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    canvas.toBlob(function(blob) {
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = 'cloud-architecture.png';
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                    });
+                    
+                    URL.revokeObjectURL(svgUrl);
+                };
+                
+                img.src = svgUrl;
+            }
+        }
+
+        // Mermaid 코드 복사
+        function copyMermaidCode() {
+            if (currentMermaidCode) {
+                navigator.clipboard.writeText(currentMermaidCode).then(() => {
+                    alert('Mermaid 코드가 클립보드에 복사되었습니다!');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
