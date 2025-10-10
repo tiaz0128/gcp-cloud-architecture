@@ -9,6 +9,18 @@ const CONFIG = {
 let currentMermaidCode = '';
 let mermaidCounter = 0;
 
+// SVG zoom and pan state
+let svgState = {
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    minScale: 0.1,
+    maxScale: 5
+};
+
 // Initialize Mermaid
 function initializeMermaid() {
     mermaid.initialize({
@@ -202,6 +214,9 @@ async function renderMermaidDiagram(code) {
         container.appendChild(svgContainer);
         hideLoading();
 
+        // Enable SVG interaction after rendering
+        setTimeout(() => enableSVGInteraction(), 100);
+
     } catch (error) {
         console.error('Mermaid 렌더링 실패:', error);
         
@@ -229,6 +244,9 @@ async function renderMermaidDiagram(code) {
             mermaidElement.removeAttribute('data-processed');
             mermaid.init(undefined, mermaidElement);
             hideLoading();
+
+            // Enable SVG interaction after fallback rendering
+            setTimeout(() => enableSVGInteraction(), 500);
 
         } catch (fallbackError) {
             console.error('모든 렌더링 방법 실패:', fallbackError);
@@ -337,8 +355,143 @@ function initializeApp() {
     // Action buttons - use event delegation
     document.addEventListener('click', handleActionClick);
 
+    // Initialize SVG controls
+    initializeSVGControls();
+
     console.log('앱 초기화 완료');
     console.log('API URL:', getApiBaseUrl());
+}
+
+// SVG Zoom and Pan functionality
+function initializeSVGControls() {
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const resetZoomBtn = document.getElementById('resetZoomBtn');
+    const diagramContainer = document.getElementById('diagramContainer');
+
+    if (zoomInBtn) zoomInBtn.addEventListener('click', () => zoomSVG(1.2));
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => zoomSVG(0.8));
+    if (resetZoomBtn) resetZoomBtn.addEventListener('click', resetSVGZoom);
+
+    // Add mouse wheel support
+    if (diagramContainer) {
+        diagramContainer.addEventListener('wheel', handleWheelZoom, { passive: false });
+    }
+}
+
+function enableSVGInteraction() {
+    const svgElement = document.querySelector('#diagramContainer svg');
+    if (!svgElement) return;
+
+    // Make sure controls are visible
+    const controls = document.getElementById('diagramControls');
+    if (controls) controls.style.display = 'block';
+
+    // Reset state
+    resetSVGState();
+
+    // Add drag functionality
+    svgElement.addEventListener('mousedown', startDrag);
+    svgElement.addEventListener('mousemove', drag);
+    svgElement.addEventListener('mouseup', endDrag);
+    svgElement.addEventListener('mouseleave', endDrag);
+    
+    // Touch support
+    svgElement.addEventListener('touchstart', startDragTouch, { passive: false });
+    svgElement.addEventListener('touchmove', dragTouch, { passive: false });
+    svgElement.addEventListener('touchend', endDrag);
+
+    // Initial transform
+    applySVGTransform();
+    updateZoomDisplay();
+}
+
+function resetSVGState() {
+    svgState.scale = 1;
+    svgState.translateX = 0;
+    svgState.translateY = 0;
+    svgState.isDragging = false;
+}
+
+function applySVGTransform() {
+    const svgElement = document.querySelector('#diagramContainer svg');
+    if (!svgElement) return;
+
+    const transform = `translate(${svgState.translateX}px, ${svgState.translateY}px) scale(${svgState.scale})`;
+    svgElement.style.transform = transform;
+    svgElement.style.transformOrigin = 'center center';
+    svgElement.style.cursor = svgState.isDragging ? 'grabbing' : 'grab';
+}
+
+function zoomSVG(factor) {
+    const newScale = svgState.scale * factor;
+    if (newScale >= svgState.minScale && newScale <= svgState.maxScale) {
+        svgState.scale = newScale;
+        applySVGTransform();
+        updateZoomDisplay();
+    }
+}
+
+function resetSVGZoom() {
+    resetSVGState();
+    applySVGTransform();
+    updateZoomDisplay();
+}
+
+function updateZoomDisplay() {
+    const zoomLevel = document.getElementById('zoomLevel');
+    if (zoomLevel) {
+        zoomLevel.textContent = Math.round(svgState.scale * 100) + '%';
+    }
+}
+
+function handleWheelZoom(e) {
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    zoomSVG(factor);
+}
+
+function startDrag(e) {
+    e.preventDefault();
+    svgState.isDragging = true;
+    svgState.startX = e.clientX - svgState.translateX;
+    svgState.startY = e.clientY - svgState.translateY;
+    applySVGTransform();
+}
+
+function drag(e) {
+    if (!svgState.isDragging) return;
+    e.preventDefault();
+    
+    svgState.translateX = e.clientX - svgState.startX;
+    svgState.translateY = e.clientY - svgState.startY;
+    applySVGTransform();
+}
+
+function endDrag() {
+    svgState.isDragging = false;
+    applySVGTransform();
+}
+
+function startDragTouch(e) {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        svgState.isDragging = true;
+        svgState.startX = touch.clientX - svgState.translateX;
+        svgState.startY = touch.clientY - svgState.translateY;
+        applySVGTransform();
+    }
+}
+
+function dragTouch(e) {
+    if (!svgState.isDragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    svgState.translateX = touch.clientX - svgState.startX;
+    svgState.translateY = touch.clientY - svgState.startY;
+    applySVGTransform();
 }
 
 // Start app when DOM is loaded

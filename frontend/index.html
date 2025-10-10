@@ -55,15 +55,31 @@
             </div>
 
             <div class="diagram-panel">
-                <div class="diagram-container" id="diagramContainer">
-                    <div class="placeholder" id="placeholder">
-                        <div class="placeholder-icon">📊</div>
-                        <h3>다이어그램이 여기에 표시됩니다</h3>
-                        <p>왼쪽 패널에서 아키텍처를 설명하고 '다이어그램 생성' 버튼을 클릭하세요.</p>
+                <div class="diagram-viewport">
+                    <div class="diagram-controls" id="diagramControls">
+                        <button class="control-btn" id="zoomInBtn" title="확대">
+                            <span>🔍</span>
+                            <span class="control-label">+</span>
+                        </button>
+                        <button class="control-btn" id="zoomOutBtn" title="축소">
+                            <span>🔍</span>
+                            <span class="control-label">−</span>
+                        </button>
+                        <button class="control-btn" id="resetZoomBtn" title="원본 크기">
+                            <span>↺</span>
+                        </button>
+                        <div class="zoom-level" id="zoomLevel">100%</div>
                     </div>
-                    <div class="loading" id="loading">
-                        <div class="spinner"></div>
-                        <p>AI가 다이어그램을 생성하고 있습니다...</p>
+                    <div class="diagram-container" id="diagramContainer">
+                        <div class="placeholder" id="placeholder">
+                            <div class="placeholder-icon">📊</div>
+                            <h3>다이어그램이 여기에 표시됩니다</h3>
+                            <p>왼쪽 패널에서 아키텍처를 설명하고 '다이어그램 생성' 버튼을 클릭하세요.</p>
+                        </div>
+                        <div class="loading" id="loading">
+                            <div class="spinner"></div>
+                            <p>AI가 다이어그램을 생성하고 있습니다...</p>
+                        </div>
                     </div>
                 </div>
                 <div class="diagram-actions" id="diagramActions">

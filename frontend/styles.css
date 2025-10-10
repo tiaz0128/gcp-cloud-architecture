@@ -156,6 +156,76 @@ body {
     background: white;
 }
 
+.diagram-viewport {
+    position: relative;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px dashed #cbd5e0;
+    overflow: hidden;
+}
+
+.diagram-controls {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.control-btn {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.control-btn:active {
+    transform: translateY(0);
+}
+
+.control-label {
+    position: absolute;
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 2px;
+}
+
+.zoom-level {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    text-align: center;
+    min-width: 50px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 .diagram-container {
     background: #f8fafc;
     border-radius: 12px;
@@ -164,8 +234,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px dashed #cbd5e0;
     position: relative;
+    overflow: hidden;
+}
+
+.diagram-container svg {
+    transition: transform 0.1s ease-out;
+    user-select: none;
 }
 
 .placeholder {
