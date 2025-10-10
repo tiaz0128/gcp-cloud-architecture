@@ -8,6 +8,7 @@ const CONFIG = {
 // Global state
 let currentMermaidCode = '';
 let mermaidCounter = 0;
+let currentTab = 'ai-generator';
 
 // SVG zoom and pan state
 let svgState = {
@@ -40,7 +41,8 @@ function initializeMermaid() {
     mermaid.registerIconPacks([
         { name: 'gcp', loader: () => fetch(getIconUrl('gcp.json')).then(res => res.json()) },
         { name: 'azr', loader: () => fetch(getIconUrl('azr.json')).then(res => res.json()) },
-        { name: 'aws', loader: () => fetch(getIconUrl('aws.json')).then(res => res.json()) }
+        { name: 'aws', loader: () => fetch(getIconUrl('aws.json')).then(res => res.json()) },
+        { name: 'custom', loader: () => fetch(getIconUrl('custom.json')).then(res => res.json()) }
     ]);
 }
 
@@ -76,7 +78,7 @@ function getApiBaseUrl() {
 }
 
 // DOM manipulation
-function showLoading() {
+function showLoading(isManual = false) {
     const container = document.getElementById('diagramContainer');
     const placeholder = document.getElementById('placeholder');
     
@@ -86,10 +88,11 @@ function showLoading() {
         existingDiagrams.forEach(diagram => diagram.remove());
         
         // 스피너 표시
+        const loadingText = isManual ? '다이어그램 렌더링 중...' : '다이어그램 생성 중...';
         placeholder.innerHTML = `
             <div class="spinner-container">
                 <div class="spinner"></div>
-                <div class="loading-text">다이어그램 생성 중...</div>
+                <div class="loading-text">${loadingText}</div>
                 <div class="loading-subtext">잠시만 기다려 주세요</div>
             </div>
         `;
@@ -97,23 +100,37 @@ function showLoading() {
     }
     
     // 버튼 비활성화
-    const btnText = document.getElementById('btnText');
-    const button = document.querySelector('.generate-btn');
-    if (btnText) btnText.textContent = '생성 중...';
-    if (button) button.disabled = true;
+    if (isManual) {
+        const btnText = document.getElementById('manualBtnText');
+        const button = document.querySelector('#manualCodeForm .generate-btn');
+        if (btnText) btnText.textContent = '렌더링 중...';
+        if (button) button.disabled = true;
+    } else {
+        const btnText = document.getElementById('btnText');
+        const button = document.querySelector('#diagramForm .generate-btn');
+        if (btnText) btnText.textContent = '생성 중...';
+        if (button) button.disabled = true;
+    }
 }
 
-function hideLoading() {
+function hideLoading(isManual = false) {
     const placeholder = document.getElementById('placeholder');
     if (placeholder) {
         placeholder.style.display = 'none';
     }
     
     // 버튼 상태 복원
-    const btnText = document.getElementById('btnText');
-    const button = document.querySelector('.generate-btn');
-    if (btnText) btnText.textContent = '다이어그램 생성';
-    if (button) button.disabled = false;
+    if (isManual) {
+        const btnText = document.getElementById('manualBtnText');
+        const button = document.querySelector('#manualCodeForm .generate-btn');
+        if (btnText) btnText.textContent = '다이어그램 렌더링';
+        if (button) button.disabled = false;
+    } else {
+        const btnText = document.getElementById('btnText');
+        const button = document.querySelector('#diagramForm .generate-btn');
+        if (btnText) btnText.textContent = '다이어그램 생성';
+        if (button) button.disabled = false;
+    }
 }
 
 function showDiagramActions() {
@@ -146,9 +163,14 @@ function showError(message) {
 
     // 버튼 상태 복원
     const btnText = document.getElementById('btnText');
-    const button = document.querySelector('.generate-btn');
+    const button = document.querySelector('#diagramForm .generate-btn');
+    const manualBtnText = document.getElementById('manualBtnText');
+    const manualButton = document.querySelector('#manualCodeForm .generate-btn');
+    
     if (btnText) btnText.textContent = '다이어그램 생성';
     if (button) button.disabled = false;
+    if (manualBtnText) manualBtnText.textContent = '다이어그램 렌더링';
+    if (manualButton) manualButton.disabled = false;
 }
 
 // Main functionality
@@ -204,6 +226,77 @@ async function generateDiagram() {
     }
 }
 
+// Tab switching functionality
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(tabName).classList.add('active');
+
+    // Update current tab
+    currentTab = tabName;
+}
+
+// Manual code rendering
+async function renderManualCode() {
+    const formData = new FormData(document.getElementById('manualCodeForm'));
+    const mermaidCode = formData.get('mermaid_code').trim();
+
+    if (!mermaidCode) {
+        showError('코드를 입력해주세요.');
+        return;
+    }
+
+    console.log('수동 코드 렌더링 시작');
+    
+    // 로딩 상태 표시
+    showLoading(true);
+
+    try {
+        // Validate code starts with architecture-beta
+        if (!mermaidCode.toLowerCase().includes('architecture-beta')) {
+            throw new Error('코드가 "architecture-beta"로 시작해야 합니다.');
+        }
+
+        console.log('수동 코드 렌더링 중:', mermaidCode);
+        currentMermaidCode = mermaidCode;
+        await renderMermaidDiagram(mermaidCode);
+        showDiagramActions();
+
+    } catch (error) {
+        console.error('수동 렌더링 에러:', error);
+        showError(`코드 렌더링에 실패했습니다.<br><br>
+            <strong>오류:</strong> ${error.message}<br><br>
+            <small>💡 코드 구문을 확인하고 다시 시도해보세요.</small>`);
+    }
+}
+
+// Utility function to completely clear diagram container
+function clearDiagramContainer() {
+    const container = document.getElementById('diagramContainer');
+    if (!container) return;
+    
+    // Get all direct children of the diagram container
+    const children = Array.from(container.children);
+    
+    // Remove all children except the placeholder
+    children.forEach(child => {
+        if (child.id !== 'placeholder') {
+            child.remove();
+        }
+    });
+    
+    // Reset mermaid counter to avoid conflicts
+    mermaidCounter = 0;
+}
+
 async function renderMermaidDiagram(code) {
     const container = document.getElementById('diagramContainer');
     
@@ -213,9 +306,8 @@ async function renderMermaidDiagram(code) {
     }
 
     try {
-        // Clear existing diagrams
-        const existingDiagrams = container.querySelectorAll('div:not(#placeholder)');
-        existingDiagrams.forEach(diagram => diagram.remove());
+        // Use utility function for thorough cleanup
+        clearDiagramContainer();
 
         // Render with mermaid
         mermaidCounter++;
@@ -231,13 +323,16 @@ async function renderMermaidDiagram(code) {
         container.appendChild(svgContainer);
 
         // 로딩 상태 숨기기
-        hideLoading();
+        hideLoading(currentTab === 'manual-code');
 
         // Enable SVG interaction after rendering
         setTimeout(() => enableSVGInteraction(), 100);
 
     } catch (error) {
         console.error('Mermaid 렌더링 실패:', error);
+        
+        // Clear any partial content before trying fallback
+        clearDiagramContainer();
         
         // Fallback method
         try {
@@ -261,16 +356,36 @@ async function renderMermaidDiagram(code) {
             }
 
             mermaidElement.removeAttribute('data-processed');
-            mermaid.init(undefined, mermaidElement);
-
-            // 로딩 상태 숨기기
-            hideLoading();
-
-            // Enable SVG interaction after fallback rendering
-            setTimeout(() => enableSVGInteraction(), 500);
+            
+            // Try mermaid.init with error handling
+            try {
+                await mermaid.init(undefined, mermaidElement);
+                
+                // Check if rendering was successful (SVG was created)
+                const svgElement = mermaidElement.querySelector('svg');
+                if (!svgElement) {
+                    throw new Error('Mermaid 렌더링이 완료되지 않았습니다.');
+                }
+                
+                // 로딩 상태 숨기기
+                hideLoading(currentTab === 'manual-code');
+                
+                // Enable SVG interaction after fallback rendering
+                setTimeout(() => enableSVGInteraction(), 500);
+                
+            } catch (initError) {
+                console.error('mermaid.init 실패:', initError);
+                // Remove the failed element
+                mermaidElement.remove();
+                throw initError;
+            }
 
         } catch (fallbackError) {
             console.error('모든 렌더링 방법 실패:', fallbackError);
+            
+            // Ensure complete cleanup on final failure
+            clearDiagramContainer();
+            
             showError(`다이어그램 렌더링에 실패했습니다.<br><br>
                 <strong>Mermaid 코드:</strong><br>
                 <pre style="background: #f5f5f5; padding: 15px; border-radius: 4px; font-size: 12px; overflow-x: auto; margin: 10px 0;">${code}</pre>
@@ -371,7 +486,11 @@ function setExample(text) {
 function handleExampleClick(event) {
     const example = event.target.closest('.example-item');
     if (example && example.dataset.example) {
+        // Handle AI generation examples
         setExample(example.dataset.example);
+    } else if (example && example.dataset.code) {
+        // Handle manual code examples
+        document.getElementById('mermaidCode').value = example.dataset.code;
     }
 }
 
@@ -397,14 +516,33 @@ function handleActionClick(event) {
 function initializeApp() {
     initializeMermaid();
 
-    // Form submission
+    // Form submission for AI generator
     document.getElementById('diagramForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         await generateDiagram();
     });
 
-    // Example items - use event delegation
-    document.querySelector('.examples').addEventListener('click', handleExampleClick);
+    // Form submission for manual code
+    document.getElementById('manualCodeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await renderManualCode();
+    });
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const tabName = e.target.dataset.tab;
+            switchTab(tabName);
+        });
+    });
+
+    // Example items - use event delegation for both AI and manual examples
+    document.addEventListener('click', (event) => {
+        const example = event.target.closest('.example-item');
+        if (example) {
+            handleExampleClick(event);
+        }
+    });
 
     // Action buttons - use event delegation
     document.addEventListener('click', handleActionClick);

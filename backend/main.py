@@ -192,7 +192,7 @@ async def generate_diagram(request: DiagramRequest):
         5. **아이콘 참고**:
            - <provider>:아이콘명 형식 사용
            - 서비스 / 리소스명은 _(언더스코어)로 연결 (예: cloud_run, sql_database)
-           - GCP: gcp:google_cloud, gcp:cloud_run, gcp:cloud_storage
+           - GCP: gcp:google_cloud, gcp:virtual_private_cloud, gcp:cloud_run, gcp:cloud_storage
            - AWS: aws:aws, aws:ec2, aws:s3, aws:rds, aws:vpc, aws:cloudfront
            - Azure: azr:azure, azr:functions, azr:sql_database
 
@@ -204,7 +204,7 @@ async def generate_diagram(request: DiagramRequest):
         **올바른 예시:**
         ```
         architecture-beta
-            group vpc(gcp:vpc)[Virtual Private Cloud]
+            group vpc(gcp:virtual_private_cloud)[Virtual Private Cloud]
             service loadbalancer(gcp:load-balancing)[Load Balancer] in vpc
             service cloudrun(gcp:cloud-run)[Cloud Run] in vpc
             service cloudsql(gcp:cloud-sql)[Cloud SQL] in vpc

@@ -18,38 +18,101 @@
 
         <div class="main-content">
             <div class="input-panel">
-                <form id="diagramForm">
-                    <div class="form-group">
-                        <label for="description">아키텍처 설명</label>
-                        <textarea id="description" name="description"
-                            placeholder="예: FastAPI 앱을 Cloud Run으로 배포하고, Firestore를 데이터베이스로 사용합니다. 사용자는 Load Balancer를 통해 접근합니다."
-                            required></textarea>
-                    </div>
+                <!-- Tab Navigation -->
+                <div class="tab-navigation">
+                    <button class="tab-btn active" data-tab="ai-generator">🤖 AI 생성</button>
+                    <button class="tab-btn" data-tab="manual-code">📝 직접 입력</button>
+                </div>
 
-                    <div class="form-group">
-                        <label for="cloudProvider">클라우드 제공자</label>
-                        <select id="cloudProvider" name="cloud_provider">
-                            <option value="gcp">Google Cloud Platform</option>
-                            <option value="aws">Amazon Web Services</option>
-                            <option value="azure">Microsoft Azure</option>
-                        </select>
-                    </div>
+                <!-- AI Generator Tab -->
+                <div id="ai-generator" class="tab-content active">
+                    <form id="diagramForm">
+                        <div class="form-group">
+                            <label for="description">아키텍처 설명</label>
+                            <textarea id="description" name="description"
+                                placeholder="예: FastAPI 앱을 Cloud Run으로 배포하고, Firestore를 데이터베이스로 사용합니다. 사용자는 Load Balancer를 통해 접근합니다."
+                                required></textarea>
+                        </div>
 
-                    <button type="submit" class="generate-btn">
-                        <span id="btnText">다이어그램 생성</span>
-                    </button>
-                </form>
+                        <div class="form-group">
+                            <label for="cloudProvider">클라우드 제공자</label>
+                            <select id="cloudProvider" name="cloud_provider">
+                                <option value="gcp">Google Cloud Platform</option>
+                                <option value="aws">Amazon Web Services</option>
+                                <option value="azure">Microsoft Azure</option>
+                            </select>
+                        </div>
 
-                <div class="examples">
-                    <h3>예시 템플릿</h3>
-                    <div class="example-item" data-example="웹 애플리케이션을 GCP Cloud Run으로 배포하고, Cloud SQL을 데이터베이스로 사용합니다. 앞에 Load Balancer가 있고 정적 파일은 Cloud Storage에 저장됩니다.">
-                        📱 웹 앱 + 데이터베이스
+                        <button type="submit" class="generate-btn">
+                            <span id="btnText">다이어그램 생성</span>
+                        </button>
+                    </form>
+
+                    <div class="examples">
+                        <h3>예시 템플릿</h3>
+                        <div class="example-item" data-example="웹 애플리케이션을 GCP Cloud Run으로 배포하고, Cloud SQL을 데이터베이스로 사용합니다. 앞에 Load Balancer가 있고 정적 파일은 Cloud Storage에 저장됩니다.">
+                            📱 웹 앱 + 데이터베이스
+                        </div>
+                        <div class="example-item" data-example="마이크로서비스 아키텍처로 API Gateway를 통해 여러 서비스에 라우팅하고, 각 서비스는 독립적인 데이터베이스를 가집니다.">
+                            🔧 마이크로서비스 아키텍처
+                        </div>
+                        <div class="example-item" data-example="데이터 파이프라인을 구축합니다. Cloud Storage에서 데이터를 읽어 BigQuery로 처리하고 결과를 시각화합니다.">
+                            📊 데이터 파이프라인
+                        </div>
                     </div>
-                    <div class="example-item" data-example="마이크로서비스 아키텍처로 API Gateway를 통해 여러 서비스에 라우팅하고, 각 서비스는 독립적인 데이터베이스를 가집니다.">
-                        🔧 마이크로서비스 아키텍처
-                    </div>
-                    <div class="example-item" data-example="데이터 파이프라인을 구축합니다. Cloud Storage에서 데이터를 읽어 BigQuery로 처리하고 결과를 시각화합니다.">
-                        📊 데이터 파이프라인
+                </div>
+
+                <!-- Manual Code Tab -->
+                <div id="manual-code" class="tab-content">
+                    <form id="manualCodeForm">
+                        <div class="form-group">
+                            <label for="mermaidCode">Architecture-Beta 코드</label>
+                            <textarea id="mermaidCode" name="mermaid_code"
+                                placeholder="architecture-beta
+
+    group api [API Layer]
+    
+    service fastapi(logos:fastapi)[FastAPI App] in api
+    service cloudsql(gcp:cloud-sql)[Cloud SQL] in api
+    
+    user(logos:user)[Users] --> fastapi : HTTP Requests
+    fastapi --> cloudsql : SQL Queries"
+                                required></textarea>
+                        </div>
+
+                        <button type="submit" class="generate-btn">
+                            <span id="manualBtnText">다이어그램 렌더링</span>
+                        </button>
+                    </form>
+
+                    <div class="examples">
+                        <h3>테스트 예시</h3>
+                        <div class="example-item manual-example" data-code="architecture-beta
+
+    group vpc(gcp:virtual_private_cloud)[VPC Network]
+    
+    service app(gcp:cloud_run)[Cloud Run App] in vpc
+    service db(gcp:cloud_sql)[Cloud SQL] in vpc
+
+    app:R -- L:db">
+                            🔧 간단한 GCP 앱
+                        </div>
+                        <div class="example-item manual-example" data-code="architecture-beta
+
+    service web(custom:react)[Web App]
+    service api(custom:fastapi)[API Server]
+    
+    web:R -- L:api">
+                            ☁️ 웹-API 연결
+                        </div>
+                        <div class="example-item manual-example" data-code="architecture-beta
+
+    group cloud(gcp:google_cloud)[Cloud Services]
+    
+    service storage(gcp:cloud_storage)[Storage] in cloud
+    service compute(gcp:compute_engine)[Compute] in cloud">
+                            📱 기본 서비스
+                        </div>
                     </div>
                 </div>
             </div>
@@ -57,17 +120,9 @@
             <div class="diagram-panel">
                 <div class="diagram-viewport">
                     <div class="diagram-controls" id="diagramControls">
-                        <button class="control-btn" id="zoomInBtn" title="확대">
-                            <span>🔍</span>
-                            <span class="control-label">+</span>
-                        </button>
-                        <button class="control-btn" id="zoomOutBtn" title="축소">
-                            <span>🔍</span>
-                            <span class="control-label">−</span>
-                        </button>
-                        <button class="control-btn" id="resetZoomBtn" title="원본 크기">
-                            <span>↺</span>
-                        </button>
+                        <button class="control-btn" id="zoomInBtn" title="확대">+</button>
+                        <button class="control-btn" id="zoomOutBtn" title="축소">−</button>
+                        <button class="control-btn" id="resetZoomBtn" title="원본 크기">↺</button>
                         <div class="zoom-level" id="zoomLevel">100%</div>
                     </div>
                     <div class="diagram-container" id="diagramContainer">

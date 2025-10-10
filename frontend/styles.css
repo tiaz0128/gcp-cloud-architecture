@@ -52,6 +52,69 @@ body {
     border-right: 2px solid #e2e8f0;
 }
 
+/* Tab Navigation */
+.tab-navigation {
+    display: flex;
+    margin-bottom: 25px;
+    background: white;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+}
+
+.tab-btn:hover:not(.active) {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Manual Code specific styles */
+#mermaidCode {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    height: 200px !important;
+    background: #1e293b;
+    color: #e2e8f0;
+    border: 2px solid #334155;
+}
+
+#mermaidCode:focus {
+    border-color: #4facfe;
+    box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+}
+
+#mermaidCode::placeholder {
+    color: #64748b;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -108,21 +171,6 @@ body {
     cursor: not-allowed;
 }
 
-.action-btn {
-    padding: 10px 20px;
-    background: #6366f1;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.3s ease;
-}
-
-.action-btn:hover {
-    background: #4f46e5;
-}
-
 /* Examples Section */
 .examples {
     margin-top: 30px;
@@ -159,57 +207,77 @@ body {
 
 .diagram-viewport {
     flex: 1;
-    padding: 20px;
+    padding: 15px;
     position: relative;
-    overflow: hidden;
 }
 
 .diagram-container {
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 15px;
+    min-height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: relative;
-    min-height: 400px;
+}
+
+.diagram-container svg {
+    transition: transform 0.1s ease-out;
+    user-select: none;
 }
 
 .diagram-controls {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px;
+    right: 10px;
     display: none;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 100;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 12px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    z-index: 10;
+    background: #e5e5e5;
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #d1d1d1;
 }
 
 .control-btn {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    width: 26px;
+    height: 26px;
+    background: #6b7280;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 3px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    position: relative;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    transition: background 0.2s ease;
 }
 
 .control-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: #4b5563;
 }
 
-.control-btn:active {
-    transform: translateY(0);
+.zoom-level {
+    background: #e5e5e5;
+    padding: 4px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #374151;
+    text-align: center;
+    line-height: 1;
+    min-width: 35px;
+    border: 1px solid #d1d1d1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .control-label {
@@ -259,11 +327,61 @@ body {
     opacity: 0.5;
 }
 
+/* Loading Spinner */
+.spinner-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #4facfe;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.loading-subtext {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
 /* Diagram Actions */
 .diagram-actions {
-    margin-top: 20px;
+    padding: 10px 15px;
     display: none;
-    gap: 10px;
+    gap: 8px;
+    background: #f9f9f9;
+    border-top: 1px solid #e5e5e5;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s ease;
+}
+
+.action-btn:hover {
+    background: #4b5563;
 }
 
 /* Mermaid Styles */
@@ -323,4 +441,84 @@ body {
     color: #94a3b8;
     font-size: 0.9rem;
     text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .input-panel {
+        border-right: none;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .tab-navigation {
+        flex-direction: row;
+    }
+    
+    .tab-btn {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        border-radius: 12px;
+    }
+    
+    .header {
+        padding: 20px;
+    }
+    
+    .header h1 {
+        font-size: 2rem;
+    }
+    
+    .input-panel {
+        padding: 20px;
+    }
+    
+    .tab-btn {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+    
+    #mermaidCode {
+        font-size: 12px;
+        height: 150px !important;
+    }
+    
+    .diagram-controls {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .control-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+    
+    .zoom-level {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+    
+    .diagram-actions {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 15px;
+    }
+    
+    .action-btn {
+        font-size: 13px;
+        padding: 8px 16px;
+    }
 }
