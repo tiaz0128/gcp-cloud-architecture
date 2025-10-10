@@ -27,21 +27,23 @@ def clean_mermaid_code(code: str) -> str:
         if line.startswith("%%"):
             continue
 
-        # 대괄호 안의 괄호 처리 - 예: [Cloud Storage (Static Files)]
-        # Mermaid에서 대괄호 안에 괄호가 있으면 문제가 될 수 있으므로 안전하게 변환
+        # 대괄호 안의 특수문자 처리 - 예: [Cloud Storage (Static Files)]
+        # Mermaid에서 대괄호 안에 특수문자가 있으면 문제가 될 수 있으므로 안전하게 제거
         import re
 
-        # 대괄호 안에 괄호가 있는 패턴을 찾아서 괄호를 다른 문자로 변환
-        def replace_brackets_in_label(match):
+        # 대괄호 안에 특수문자가 있는 패턴을 찾아서 특수문자를 제거
+        def clean_special_chars_in_label(match):
             label_content = match.group(1)
-            # 괄호와 꺾쇠괄호를 다른 문자로 변환 (예: () -> 〈〉, <> -> ‹›)
-            label_content = label_content.replace("(", "〈").replace(")", "〉")
-            label_content = label_content.replace("<", "‹").replace(">", "›")
-            return f"[{label_content}]"
+            # 특수문자를 공백으로 변환 후 여러 공백을 하나로 정리
+            # 영문자, 숫자, 한글, 공백, 하이픈, 언더스코어만 남기고 나머지 제거
+            cleaned_content = re.sub(r"[^\w\s\-가-힣]", " ", label_content)
+            # 여러 공백을 하나로 정리하고 앞뒤 공백 제거
+            cleaned_content = re.sub(r"\s+", " ", cleaned_content).strip()
+            return f"[{cleaned_content}]"
 
-        # 패턴: [내용(괄호포함)] 또는 [내용<꺾쇠괄호포함>] 형태를 찾아서 변환
+        # 패턴: [내용] 형태에서 특수문자가 포함된 경우 정리
         line = re.sub(
-            r"\[([^\[\]]*[\(\)<>][^\[\]]*)\]", replace_brackets_in_label, line
+            r"\[([^\[\]]*[^\w\s\-가-힣][^\[\]]*)\]", clean_special_chars_in_label, line
         )
 
         # architecture-beta 구문에서는 기본적으로 안전한 구문 사용
