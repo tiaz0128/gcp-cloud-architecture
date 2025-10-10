@@ -277,14 +277,41 @@ function downloadDiagram(format) {
         const ctx = canvas.getContext('2d');
         const img = new Image();
 
-        const svgData = new XMLSerializer().serializeToString(svg);
-        const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
+        // Get SVG dimensions
+        const svgRect = svg.getBoundingClientRect();
+        const svgWidth = svg.viewBox?.baseVal?.width || svgRect.width || 800;
+        const svgHeight = svg.viewBox?.baseVal?.height || svgRect.height || 600;
+
+        // High resolution scale factor (2x for retina displays, can be increased for higher quality)
+        const scaleFactor = 3;
+        
+        // Set high resolution canvas size
+        canvas.width = svgWidth * scaleFactor;
+        canvas.height = svgHeight * scaleFactor;
+        
+        // Scale the context to ensure correct drawing operations
+        ctx.scale(scaleFactor, scaleFactor);
+        
+        // Enable high-quality rendering
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        // Create high-quality SVG data
+        const svgClone = svg.cloneNode(true);
+        svgClone.setAttribute('width', svgWidth);
+        svgClone.setAttribute('height', svgHeight);
+        
+        const svgData = new XMLSerializer().serializeToString(svgClone);
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
         const svgUrl = URL.createObjectURL(svgBlob);
 
         img.onload = function () {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
+            // Fill white background for better contrast
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, svgWidth, svgHeight);
+            
+            // Draw the image
+            ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
 
             canvas.toBlob(function (blob) {
                 const link = document.createElement('a');
@@ -292,8 +319,14 @@ function downloadDiagram(format) {
                 link.download = 'cloud-architecture.png';
                 link.click();
                 URL.revokeObjectURL(link.href);
-            });
+            }, 'image/png', 1.0); // Maximum quality
 
+            URL.revokeObjectURL(svgUrl);
+        };
+
+        img.onerror = function() {
+            console.error('PNG 변환 중 오류가 발생했습니다.');
+            alert('PNG 다운로드 중 오류가 발생했습니다. SVG 형식으로 다운로드해보세요.');
             URL.revokeObjectURL(svgUrl);
         };
 
