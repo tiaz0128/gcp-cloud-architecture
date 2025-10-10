@@ -63,11 +63,11 @@ def extract_svg_dimensions(svg_content: str) -> tuple[int, int]:
         return int(width_match.group(1)), int(height_match.group(1))
 
     # 기본값 반환
-    return 32, 32
+    return 24, 24
 
 
 def svg_to_json_body(
-    svg_file_path: str, icon_name: str, output_width: int = 32, output_height: int = 32
+    svg_file_path: str, icon_name: str, output_width: int = 24, output_height: int = 24
 ) -> dict:
     """
     SVG 파일을 JSON 형식의 body로 변환합니다.
@@ -75,8 +75,8 @@ def svg_to_json_body(
     Args:
         svg_file_path: SVG 파일 경로
         icon_name: 아이콘 이름 (키로 사용)
-        output_width: 출력 width (기본값: 32)
-        output_height: 출력 height (기본값: 32)
+        output_width: 출력 width (기본값: 24)
+        output_height: 출력 height (기본값: 24)
 
     Returns:
         JSON 형식의 딕셔너리
@@ -102,8 +102,8 @@ def svg_to_json_body(
 def process_multiple_svgs(
     svg_files: list[tuple[str, str]],
     output_file: Optional[str] = None,
-    output_width: int = 32,
-    output_height: int = 32,
+    output_width: int = 24,
+    output_height: int = 24,
     prefix: str = "gcp",
 ) -> dict:
     """
