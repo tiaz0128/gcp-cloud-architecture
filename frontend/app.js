@@ -77,41 +77,26 @@ function getApiBaseUrl() {
 
 // DOM manipulation
 function showLoading() {
-    console.log('showLoading 호출됨');
-    
     const container = document.getElementById('diagramContainer');
     const placeholder = document.getElementById('placeholder');
-    const actions = document.getElementById('diagramActions');
-    const loading = document.getElementById('loading');
     
-    // 모든 기존 다이어그램 완전히 제거
-    if (container) {
-        const existingDiagrams = container.querySelectorAll('div:not(#placeholder):not(#loading)');
-        existingDiagrams.forEach(diagram => {
-            diagram.remove();
-        });
-    }
-    
-    // 다른 요소들 숨기기
-    if (placeholder) {
-        placeholder.style.display = 'none';
-    }
-    if (actions) {
-        actions.style.display = 'none';
+    if (container && placeholder) {
+        // 기존 다이어그램 모두 제거
+        const existingDiagrams = container.querySelectorAll('div:not(#placeholder)');
+        existingDiagrams.forEach(diagram => diagram.remove());
+        
+        // 스피너 표시
+        placeholder.innerHTML = `
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <div class="loading-text">다이어그램 생성 중...</div>
+                <div class="loading-subtext">잠시만 기다려 주세요</div>
+            </div>
+        `;
+        placeholder.style.display = 'block';
     }
     
-    // 로딩 스피너 강제로 표시
-    if (loading) {
-        loading.style.display = 'flex';
-        loading.classList.add('show');
-        // 확실히 맨 앞에 오도록 z-index 설정
-        loading.style.zIndex = '9999';
-        console.log('로딩 스피너 표시됨');
-    } else {
-        console.error('로딩 요소를 찾을 수 없습니다');
-    }
-
-    // 버튼 상태 업데이트
+    // 버튼 비활성화
     const btnText = document.getElementById('btnText');
     const button = document.querySelector('.generate-btn');
     if (btnText) btnText.textContent = '생성 중...';
@@ -119,15 +104,11 @@ function showLoading() {
 }
 
 function hideLoading() {
-    console.log('hideLoading 호출됨');
-    
-    const loading = document.getElementById('loading');
-    if (loading) {
-        loading.style.display = 'none';
-        loading.classList.remove('show');
-        console.log('로딩 스피너 숨김');
+    const placeholder = document.getElementById('placeholder');
+    if (placeholder) {
+        placeholder.style.display = 'none';
     }
-
+    
     // 버튼 상태 복원
     const btnText = document.getElementById('btnText');
     const button = document.querySelector('.generate-btn');
@@ -144,14 +125,13 @@ function showDiagramActions() {
 
 function showError(message) {
     console.log('showError 호출됨');
-    hideLoading(); // 확실히 로딩 상태 종료
     
     const container = document.getElementById('diagramContainer');
     const placeholder = document.getElementById('placeholder');
 
     if (container) {
         // 기존 다이어그램 모두 제거
-        const existingDiagrams = container.querySelectorAll('div:not(#placeholder):not(#loading)');
+        const existingDiagrams = container.querySelectorAll('div:not(#placeholder)');
         existingDiagrams.forEach(diagram => diagram.remove());
 
         if (placeholder) {
@@ -163,6 +143,12 @@ function showError(message) {
             placeholder.style.display = 'block';
         }
     }
+
+    // 버튼 상태 복원
+    const btnText = document.getElementById('btnText');
+    const button = document.querySelector('.generate-btn');
+    if (btnText) btnText.textContent = '다이어그램 생성';
+    if (button) button.disabled = false;
 }
 
 // Main functionality
@@ -175,6 +161,8 @@ async function generateDiagram() {
     };
 
     console.log('다이어그램 생성 시작');
+    
+    // 로딩 상태 표시
     showLoading();
 
     try {
@@ -204,7 +192,6 @@ async function generateDiagram() {
 
     } catch (error) {
         console.error('API 에러:', error);
-        hideLoading(); // 에러 발생 시 확실히 로딩 숨김
         
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             showError(`API 서버에 연결할 수 없습니다.<br><br>
@@ -222,13 +209,12 @@ async function renderMermaidDiagram(code) {
     
     if (!container) {
         console.error('다이어그램 컨테이너를 찾을 수 없습니다');
-        hideLoading();
         return;
     }
 
     try {
         // Clear existing diagrams
-        const existingDiagrams = container.querySelectorAll('div:not(#placeholder):not(#loading)');
+        const existingDiagrams = container.querySelectorAll('div:not(#placeholder)');
         existingDiagrams.forEach(diagram => diagram.remove());
 
         // Render with mermaid
@@ -243,6 +229,8 @@ async function renderMermaidDiagram(code) {
         svgContainer.innerHTML = renderResult.svg;
 
         container.appendChild(svgContainer);
+
+        // 로딩 상태 숨기기
         hideLoading();
 
         // Enable SVG interaction after rendering
@@ -274,6 +262,8 @@ async function renderMermaidDiagram(code) {
 
             mermaidElement.removeAttribute('data-processed');
             mermaid.init(undefined, mermaidElement);
+
+            // 로딩 상태 숨기기
             hideLoading();
 
             // Enable SVG interaction after fallback rendering
@@ -422,15 +412,6 @@ function initializeApp() {
     // Initialize SVG controls
     initializeSVGControls();
 
-    // 테스트용: 스피너 상태 확인
-    const loading = document.getElementById('loading');
-    if (loading) {
-        console.log('로딩 요소 발견:', loading);
-        console.log('초기 display 스타일:', window.getComputedStyle(loading).display);
-    } else {
-        console.error('로딩 요소를 찾을 수 없습니다!');
-    }
-
     console.log('앱 초기화 완료');
     console.log('API URL:', getApiBaseUrl());
 }
@@ -569,36 +550,3 @@ function dragTouch(e) {
 
 // Start app when DOM is loaded
 document.addEventListener('DOMContentLoaded', initializeApp);
-
-// 테스트 함수
-function testSpinner() {
-    console.log('스피너 테스트 시작');
-    const loading = document.getElementById('loading');
-    
-    if (!loading) {
-        console.error('로딩 요소를 찾을 수 없습니다!');
-        alert('로딩 요소를 찾을 수 없습니다!');
-        return;
-    }
-    
-    console.log('현재 로딩 요소 상태:');
-    console.log('- display:', window.getComputedStyle(loading).display);
-    console.log('- classList:', loading.classList.toString());
-    console.log('- style.display:', loading.style.display);
-    
-    // 수동으로 스피너 표시
-    loading.style.display = 'flex';
-    loading.classList.add('show');
-    loading.style.zIndex = '9999';
-    
-    console.log('스피너 표시 후:');
-    console.log('- display:', window.getComputedStyle(loading).display);
-    console.log('- classList:', loading.classList.toString());
-    
-    // 3초 후 숨김
-    setTimeout(() => {
-        loading.style.display = 'none';
-        loading.classList.remove('show');
-        console.log('스피너 숨김 완료');
-    }, 3000);
-}
