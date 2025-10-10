@@ -346,22 +346,39 @@
         });
 
         
+        // 아이콘 파일 URL 동적 생성 함수
+        function getIconUrl(filename) {
+            // 현재 페이지의 base URL을 기준으로 절대 경로 생성
+            const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '');
+            
+            // Cloud Storage 호스팅인 경우 올바른 도메인 사용
+            if (window.location.hostname.includes('storage.googleapis.com')) {
+                // 버킷 이름 추출
+                const pathParts = window.location.pathname.split('/');
+                const bucketName = pathParts[1] || window.location.hostname.split('.')[0];
+                return `https://storage.googleapis.com/${bucketName}/icons/${filename}`;
+            }
+            
+            // 로컬 또는 기타 호스팅의 경우 상대 경로 사용
+            return `${baseUrl}/icons/${filename}`;
+        }
+
         mermaid.registerIconPacks([
             {
                 name: 'gcp',
                 loader: () =>
-                    fetch('./icons/gcp.json').then((res) => res.json()),
+                    fetch(getIconUrl('gcp.json')).then((res) => res.json()),
             },
             {
               name: 'azr',
               loader: () =>
-                    fetch('./icons/azr.json').then((res) => res.json()),
+                    fetch(getIconUrl('azr.json')).then((res) => res.json()),
               //   fetch('https://unpkg.com/azureiconkento@1.1.1/azureicons/allicons.json').then((res) => res.json()),
             },
             {
                 name: 'aws',
                 loader: () =>
-                    fetch('./icons/aws.json').then((res) => res.json()),
+                    fetch(getIconUrl('aws.json')).then((res) => res.json()),
             },
         ]);
 
