@@ -1,0 +1,84 @@
+# .gcloudignore 파일은 Cloud Build 시 업로드하지 않을 파일을 지정합니다.
+
+# Git 관련
+.git/
+.gitignore
+.gitattributes
+
+# Python 개발 관련
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+.tox/
+.cache/
+*.egg
+
+# 가상환경
+.venv/
+venv/
+env/
+ENV/
+.virtualenv/
+
+# IDE 설정
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 운영체제 관련
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+
+# 로그 파일
+*.log
+logs/
+*.out
+
+# 임시 파일
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# 문서 (선택적으로 포함할 수 있음)
+docs/
+screenshots/
+
+# 환경 변수 파일 (보안상 중요)
+.env
+.env.*
+config.json
+secrets.json
+
+# 테스트 관련
+tests/
+test_*.py
+*_test.py
+pytest.ini
+
+# 기타 설정 파일
+.editorconfig
+.flake8
+.pylintrc
+.python-version
+
+# 로컬 개발 관련
+*.local
+
+# 이미 배포에 사용되는 파일들은 제외하지 않음:
+# - Dockerfile (빌드에 필요)
+# - cloudbuild.yaml (빌드 설정)
+# - main.py (애플리케이션 코드)
+# - pyproject.toml (의존성 정보)
+# - uv.lock (정확한 의존성 버전)
