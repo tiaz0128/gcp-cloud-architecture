@@ -153,9 +153,10 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(248, 250, 252, 0.95);
+            background: rgba(248, 250, 252, 0.98);
             border-radius: 12px;
-            z-index: 10;
+            z-index: 100;
+            min-height: 200px;
         }
 
         .spinner {
@@ -166,6 +167,8 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-bottom: 20px;
+            display: block;
+            flex-shrink: 0;
         }
 
         @keyframes spin {
@@ -347,18 +350,18 @@
             {
                 name: 'gcp',
                 loader: () =>
-                    fetch('https://storage.googleapis.com/gleaming-modem-474701-f3-cloud-architecture-frontend/icons/gcp.json').then((res) => res.json()),
+                    fetch('./icons/gcp.json').then((res) => res.json()),
             },
             {
               name: 'azr',
               loader: () =>
-                    fetch('https://storage.googleapis.com/gleaming-modem-474701-f3-cloud-architecture-frontend/icons/azr.json').then((res) => res.json()),
+                    fetch('./icons/azr.json').then((res) => res.json()),
               //   fetch('https://unpkg.com/azureiconkento@1.1.1/azureicons/allicons.json').then((res) => res.json()),
             },
             {
                 name: 'aws',
                 loader: () =>
-                    fetch('https://storage.googleapis.com/gleaming-modem-474701-f3-cloud-architecture-frontend/icons/aws.json').then((res) => res.json()),
+                    fetch('./icons/aws.json').then((res) => res.json()),
             },
         ]);
 

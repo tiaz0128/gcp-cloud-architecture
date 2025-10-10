@@ -174,18 +174,38 @@ gsutil -m rm -r gs://$BUCKET_NAME/** 2>/dev/null || echo "ℹ️  삭제할 기�
 echo "📤 프론트엔드 파일을 Cloud Storage에 업로드 중..."
 gsutil -m cp -r $TEMP_DIR/* gs://$BUCKET_NAME/
 
-# 아이콘 파일들: 캐시 없음 (즉시 업데이트)
+# HTML 파일에 적절한 캐시 설정
+echo "📄 HTML 파일 캐시 설정..."
+gsutil setmeta -h "Cache-Control:public, max-age=300" \
+    -h "Content-Type:text/html; charset=utf-8" \
+    gs://$BUCKET_NAME/index.html
+
+if [ -f "$TEMP_DIR/404.html" ]; then
+    gsutil setmeta -h "Cache-Control:public, max-age=300" \
+        -h "Content-Type:text/html; charset=utf-8" \
+        gs://$BUCKET_NAME/404.html
+fi
+
+# 아이콘 파일들: 적절한 캐시 설정 (업데이트 가능하면서도 성능 유지)
 if [ -d "$TEMP_DIR/icons" ]; then
-    echo "🎨 아이콘 파일 캐시 설정 (즉시 업데이트)..."
-    gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" \
-        -h "Pragma:no-cache" \
-        -h "Expires:0" \
+    echo "🎨 아이콘 파일 캐시 설정..."
+    gsutil -m setmeta -h "Cache-Control:public, max-age=300" \
+        -h "Content-Type:application/json" \
         gs://$BUCKET_NAME/icons/**
 fi
 
-# CORS 설정 (API 호출을 위해)
+# CORS 설정 (API 호출 및 JSON 파일 로드를 위해)
 echo "🔗 CORS 설정 적용 중..."
-echo '[{"origin":["*"],"method":["GET","POST","OPTIONS"],"responseHeader":["Content-Type","Authorization"],"maxAgeSeconds":3600}]' > cors.json
+cat > cors.json << 'EOF'
+[
+    {
+        "origin": ["*"],
+        "method": ["GET", "POST", "OPTIONS", "HEAD"],
+        "responseHeader": ["Content-Type", "Authorization", "Access-Control-Allow-Origin", "Access-Control-Allow-Methods"],
+        "maxAgeSeconds": 3600
+    }
+]
+EOF
 gsutil cors set cors.json gs://$BUCKET_NAME
 rm cors.json
 # 임시 디렉토리 정리
