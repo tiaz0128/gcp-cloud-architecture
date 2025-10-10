@@ -104,6 +104,7 @@ def process_multiple_svgs(
     output_file: Optional[str] = None,
     output_width: int = 32,
     output_height: int = 32,
+    prefix: str = "gcp",
 ) -> dict:
     """
     여러 SVG 파일을 한 번에 처리합니다.
@@ -113,9 +114,10 @@ def process_multiple_svgs(
         output_file: 출력 파일 경로 (None이면 출력하지 않음)
         output_width: 출력 width
         output_height: 출력 height
+        prefix: 아이콘 세트의 prefix
 
     Returns:
-        모든 아이콘을 포함하는 딕셔너리
+        prefix와 icons를 포함하는 딕셔너리
     """
     all_icons = {}
 
@@ -129,13 +131,19 @@ def process_multiple_svgs(
         except Exception as e:
             print(f"✗ {icon_name} 변환 실패: {e}")
 
+    # 최종 결과 구조 생성
+    result = {
+        "prefix": prefix,
+        "icons": all_icons
+    }
+
     # 파일로 출력
     if output_file:
         with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(all_icons, f, indent=4, ensure_ascii=False)
+            json.dump(result, f, indent=4, ensure_ascii=False)
         print(f"\n결과가 {output_file}에 저장되었습니다.")
 
-    return all_icons
+    return result
 
 
 if __name__ == "__main__":
