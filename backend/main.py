@@ -36,14 +36,14 @@ def clean_mermaid_code(code: str) -> str:
             label_content = match.group(1)
             # 특수문자를 공백으로 변환 후 여러 공백을 하나로 정리
             # 영문자, 숫자, 한글, 공백, 하이픈, 언더스코어만 남기고 나머지 제거
-            cleaned_content = re.sub(r"[^\w\s\-가-힣]", " ", label_content)
+            cleaned_content = re.sub(r"[^\w\s\-]", " ", label_content)
             # 여러 공백을 하나로 정리하고 앞뒤 공백 제거
             cleaned_content = re.sub(r"\s+", " ", cleaned_content).strip()
             return f"[{cleaned_content}]"
 
         # 패턴: [내용] 형태에서 특수문자가 포함된 경우 정리
         line = re.sub(
-            r"\[([^\[\]]*[^\w\s\-가-힣][^\[\]]*)\]", clean_special_chars_in_label, line
+            r"\[([^\[\]]*[^\w\s\-][^\[\]]*)\]", clean_special_chars_in_label, line
         )
 
         # architecture-beta 구문에서는 기본적으로 안전한 구문 사용
