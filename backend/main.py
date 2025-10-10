@@ -7,7 +7,6 @@ from vertexai.generative_models import GenerativeModel
 import os
 from datetime import datetime
 import logging
-import re
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -28,26 +27,19 @@ def clean_mermaid_code(code: str) -> str:
         if line.startswith("%%"):
             continue
 
-        # 괄호 () 사용을 대괄호 [] 로 변경
-        # 예: A(Load Balancer) -> A["Load Balancer"]
-        line = re.sub(r"(\w+)\(([^)]+)\)", r'\1["\2"]', line)
-
-        # 레이블에 특수문자가 있으면 따옴표로 감싸기
-        # 예: A[Cloud Run - Web App] -> A["Cloud Run - Web App"]
-        line = re.sub(r'(\w+)\[([^"\]]+[^a-zA-Z0-9_\s][^"\]]*)\]', r'\1["\2"]', line)
-
-        # 노드 ID에서 특수문자 제거 (영문자, 숫자, 언더스코어만 허용)
-        line = re.sub(r'([^\w\s\[\]":\-\.><=|]+)', "", line)
-
+        # architecture-beta 구문에서는 기본적으로 안전한 구문 사용
+        # 특수문자 처리는 최소화 (architecture-beta는 구조가 더 엄격함)
         cleaned_lines.append(line)
 
     cleaned_code = "\n".join(cleaned_lines)
 
-    # 기본 구조 검증
-    if not cleaned_code.strip().startswith(("graph", "flowchart", "sequenceDiagram")):
+    # 기본 구조 검증 - architecture-beta 지원 추가
+    if not cleaned_code.strip().startswith(
+        ("graph", "flowchart", "sequenceDiagram", "architecture-beta")
+    ):
         logger.warning("Mermaid 코드가 올바른 다이어그램 타입으로 시작하지 않습니다")
-        # 기본 graph TB 추가
-        cleaned_code = f"graph TB\n{cleaned_code}"
+        # 기본 architecture-beta 추가
+        cleaned_code = f"architecture-beta\n{cleaned_code}"
 
     return cleaned_code
 
@@ -154,59 +146,55 @@ async def generate_diagram(request: DiagramRequest):
 
         # Vertex AI (Gemini) 프롬프트 생성
         prompt = f"""
-        다음 설명을 바탕으로 {request.cloud_provider.upper()} 클라우드 아키텍처 다이어그램을 Mermaid 코드로 생성해주세요.
+        다음 설명을 바탕으로 {request.cloud_provider.upper()} 클라우드 아키텍처 다이어그램을 Mermaid architecture-beta 코드로 생성해주세요.
 
         사용자 설명: {request.description}
         클라우드 제공자: {request.cloud_provider.upper()}
-        다이어그램 타입: {request.diagram_type}
+        다이어그램 타입: architecture-beta
 
-        **중요한 Mermaid 구문 규칙을 반드시 준수하세요:**
+        **중요한 Mermaid architecture-beta 구문 규칙을 반드시 준수하세요:**
 
-        1. **노드 ID 규칙**:
-           - 노드 ID는 영문자로 시작하고 영문자, 숫자, 언더스코어만 사용
-           - 예: A, B1, User_Input, CloudRun, LoadBalancer
+        1. **기본 구조**:
+           - architecture-beta로 시작
+           - 4칸 들여쓰기 사용
            
-        2. **노드 레이블 규칙**:
-           - 레이블에 특수문자가 있으면 반드시 큰따옴표로 감싸기
-           - 괄호 () 사용 금지 - 대신 하이픈이나 언더스코어 사용
-           - 예: A["Cloud Run - Web App"], B["Cloud SQL - Database"]
+        2. **그룹 정의**:
+           - group 그룹명(아이콘)[표시명]
+           - 예: group vpc(logos:aws-vpc)[Virtual Private Cloud]
            
-        3. **화살표와 연결**:
-           - --> (기본 화살표), -.-> (점선), ==> (굵은 화살표) 사용
-           - 연결선에 레이블 추가시: A -->|"HTTP"| B
+        3. **서비스 정의**:
+           - service 서비스명(아이콘)[표시명] in 그룹명
+           - 예: service app(logos:aws-ec2)[Application Server] in vpc
            
-        4. **전체 구조**:
-           - graph TB (위에서 아래), graph LR (왼쪽에서 오른쪽) 사용
-           - 들여쓰기 4칸으로 일관성 유지
+        4. **연결 방향**:
+           - T (top), B (bottom), L (left), R (right)
+           - 예: service1:R -- L:service2
            
-        5. **금지사항**:
-           - 노드 레이블에 괄호 () 사용 금지
-           - 특수문자는 반드시 따옴표 안에
-           - 공백이 있는 레이블은 반드시 따옴표로 감싸기
+        5. **아이콘 참고**:
+           - GCP: logos:google-cloud, logos:google-cloud-run, logos:google-cloud-storage
+           - AWS: logos:aws-ec2, logos:aws-s3, logos:aws-rds, logos:aws-vpc, logos:aws-cloudfront
+           - Azure: logos:microsoft-azure, logos:azure-functions, logos:azure-sql-database
 
-        {request.cloud_provider.upper()} 주요 서비스 참고:
-        - GCP: Cloud Run, App Engine, Compute Engine, Cloud Storage, Firestore, Cloud SQL, Load Balancer, Cloud CDN
-        - AWS: EC2, Lambda, S3, RDS, ALB, CloudFront, API Gateway
-        - Azure: App Service, Functions, Blob Storage, SQL Database, Application Gateway
+        {request.cloud_provider.upper()} 주요 서비스 및 아이콘:
+        - GCP: Cloud Run(logos:google-cloud-run), Compute Engine(logos:google-cloud), Cloud Storage(logos:google-cloud-storage), Cloud SQL(logos:google-cloud), Firestore(logos:google-cloud)
+        - AWS: EC2(logos:aws-ec2), Lambda(logos:aws-lambda), S3(logos:aws-s3), RDS(logos:aws-rds), ALB(logos:aws-elb), CloudFront(logos:aws-cloudfront)
+        - Azure: App Service(logos:microsoft-azure), Functions(logos:azure-functions), Blob Storage(logos:microsoft-azure), SQL Database(logos:azure-sql-database)
 
         **올바른 예시:**
         ```
-        graph TB
-            User["User"] --> LoadBalancer["Load Balancer"]
-            LoadBalancer --> CloudRun["Cloud Run - Web App"]
-            CloudRun --> CloudSQL["Cloud SQL - Database"]
-            CloudRun --> CloudStorage["Cloud Storage - Static Files"]
-            CloudRun -.-> Firestore["Firestore - NoSQL DB"]
+        architecture-beta
+            group vpc(logos:google-cloud)[Virtual Private Cloud]
+            service loadbalancer(logos:google-cloud)[Load Balancer] in vpc
+            service cloudrun(logos:google-cloud-run)[Cloud Run] in vpc
+            service cloudsql(logos:google-cloud)[Cloud SQL] in vpc
+            service storage(logos:google-cloud-storage)[Cloud Storage] in vpc
+            
+            loadbalancer:B -- T:cloudrun
+            cloudrun:R -- L:cloudsql
+            cloudrun:B -- T:storage
         ```
 
-        **잘못된 예시 (사용하지 마세요):**
-        ```
-        graph TB
-            User --> LoadBalancer(Load Balancer)
-            LoadBalancer --> CloudRun[Cloud Run (Web App)]
-        ```
-
-        이제 위 규칙을 엄격히 따라 Mermaid 코드만 생성해주세요:
+        이제 위 규칙을 엄격히 따라 architecture-beta Mermaid 코드만 생성해주세요:
         """
 
         # Vertex AI (Gemini) 호출
