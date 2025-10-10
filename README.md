@@ -183,3 +183,9 @@ gcloud artifacts repositories delete cloud-run-source-deploy --location=asia-nor
 2. 필요한 API들이 활성화되어 있는지 확인
 3. `.env` 파일의 환경변수 설정 확인
 4. `gcloud auth list`로 인증 상태 확인
+
+### json 파일 재배포
+
+```bash
+gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" -h "Content-Type:application/json" gs://gleaming-modem-474701-f3-cloud-architecture-frontend/icons/*.json
+```
