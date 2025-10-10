@@ -65,52 +65,31 @@ function getApiBaseUrl() {
 
 // DOM manipulation
 function showLoading() {
-    const elements = {
-        container: document.getElementById('diagramContainer'),
-        placeholder: document.getElementById('placeholder'),
-        loading: document.getElementById('loading'),
-        btnText: document.getElementById('btnText'),
-        button: document.querySelector('.generate-btn'),
-        actions: document.getElementById('diagramActions')
-    };
-
-    // Hide existing diagrams and placeholder
-    if (elements.container) {
-        const existingDiagrams = elements.container.querySelectorAll('div:not(#placeholder):not(#loading)');
-        existingDiagrams.forEach(diagram => diagram.style.display = 'none');
-    }
+    // Hide other elements
+    const placeholder = document.getElementById('placeholder');
+    const actions = document.getElementById('diagramActions');
+    const loading = document.getElementById('loading');
     
-    if (elements.placeholder) elements.placeholder.style.display = 'none';
-    if (elements.actions) elements.actions.style.display = 'none';
-
-    // Show loading
-    if (elements.loading) {
-        elements.loading.classList.add('show');
-        elements.loading.style.display = 'flex';
-        elements.loading.style.visibility = 'visible';
-        elements.loading.style.opacity = '1';
-    }
+    if (placeholder) placeholder.style.display = 'none';
+    if (actions) actions.style.display = 'none';
+    if (loading) loading.classList.add('show');
 
     // Update button
-    if (elements.btnText) elements.btnText.textContent = '생성 중...';
-    if (elements.button) elements.button.disabled = true;
+    const btnText = document.getElementById('btnText');
+    const button = document.querySelector('.generate-btn');
+    if (btnText) btnText.textContent = '생성 중...';
+    if (button) button.disabled = true;
 }
 
 function hideLoading() {
-    const elements = {
-        loading: document.getElementById('loading'),
-        btnText: document.getElementById('btnText'),
-        button: document.querySelector('.generate-btn')
-    };
+    const loading = document.getElementById('loading');
+    if (loading) loading.classList.remove('show');
 
-    if (elements.loading) {
-        elements.loading.classList.remove('show');
-        elements.loading.style.visibility = 'hidden';
-        elements.loading.style.opacity = '0';
-    }
-
-    if (elements.btnText) elements.btnText.textContent = '다이어그램 생성';
-    if (elements.button) elements.button.disabled = false;
+    // Reset button
+    const btnText = document.getElementById('btnText');
+    const button = document.querySelector('.generate-btn');
+    if (btnText) btnText.textContent = '다이어그램 생성';
+    if (button) button.disabled = false;
 }
 
 function showDiagramActions() {
