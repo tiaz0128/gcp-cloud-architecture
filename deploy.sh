@@ -166,16 +166,21 @@ fi
 echo "🔧 API URL 자동 설정 중..."
 sed -i "s|<!-- <meta name=\"api-base-url\" content=\"https://backend-service-url.run.app\"> -->|<meta name=\"api-base-url\" content=\"$BACKEND_URL\">|g" $TEMP_DIR/index.html
 
+# 기존 파일들 삭제 (캐시 문제 해결)
+echo "🗑️  기존 파일들 삭제 중 (캐시 초기화)..."
+gsutil -m rm -r gs://$BUCKET_NAME/** 2>/dev/null || echo "ℹ️  삭제할 기존 파일이 없습니다."
+
 # 프론트엔드 파일을 Cloud Storage에 업로드
 echo "📤 프론트엔드 파일을 Cloud Storage에 업로드 중..."
 gsutil -m cp -r $TEMP_DIR/* gs://$BUCKET_NAME/
 
-# 캐시 설정 (HTML은 짧은 캐시, 정적 파일은 긴 캐시)
-echo "⚡ 캐시 설정 적용 중..."
-gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://$BUCKET_NAME/index.html
-
-if [ -f "$TEMP_DIR/404.html" ]; then
-    gsutil -m setmeta -h "Cache-Control:public, max-age=300" gs://$BUCKET_NAME/404.html
+# 아이콘 파일들: 캐시 없음 (즉시 업데이트)
+if [ -d "$TEMP_DIR/icons" ]; then
+    echo "🎨 아이콘 파일 캐시 설정 (즉시 업데이트)..."
+    gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" \
+        -h "Pragma:no-cache" \
+        -h "Expires:0" \
+        gs://$BUCKET_NAME/icons/**
 fi
 
 # CORS 설정 (API 호출을 위해)
@@ -183,7 +188,6 @@ echo "🔗 CORS 설정 적용 중..."
 echo '[{"origin":["*"],"method":["GET","POST","OPTIONS"],"responseHeader":["Content-Type","Authorization"],"maxAgeSeconds":3600}]' > cors.json
 gsutil cors set cors.json gs://$BUCKET_NAME
 rm cors.json
-
 # 임시 디렉토리 정리
 rm -rf $TEMP_DIR
 

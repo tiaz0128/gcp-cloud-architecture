@@ -127,6 +127,7 @@
             align-items: center;
             justify-content: center;
             border: 2px dashed #cbd5e0;
+            position: relative;
         }
 
         .placeholder {
@@ -144,14 +145,24 @@
             display: none;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             color: #4facfe;
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(248, 250, 252, 0.95);
+            border-radius: 12px;
+            z-index: 10;
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e2e8f0;
-            border-top: 4px solid #4facfe;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e2e8f0;
+            border-top: 5px solid #4facfe;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-bottom: 20px;
@@ -296,7 +307,8 @@
                     </div>
                     <div class="loading" id="loading">
                         <div class="spinner"></div>
-                        <p>AI가 다이어그램을 생성하고 있습니다...</p>
+                        <p><strong>AI가 다이어그램을 생성하고 있습니다...</strong></p>
+                        <p style="font-size: 14px; margin-top: 10px; opacity: 0.8;">잠시만 기다려주세요</p>
                     </div>
                 </div>
                 <div class="diagram-actions" id="diagramActions">
@@ -459,8 +471,11 @@
             try {
                 console.log('🎨 Mermaid 코드 렌더링 시작:', code);
 
-                // 기존 다이어그램 제거
-                container.innerHTML = '';
+                // 기존 다이어그램만 제거 (placeholder, loading 요소는 보존)
+                const existingDiagrams = container.querySelectorAll('div:not(#placeholder):not(#loading)');
+                existingDiagrams.forEach(diagram => {
+                    diagram.remove();
+                });
 
                 // 고유 ID 생성
                 mermaidCounter++;
@@ -492,12 +507,15 @@
                     mermaidCounter++;
                     const fallbackId = `mermaid-fallback-${mermaidCounter}`;
 
-                    // 컨테이너에 Mermaid 코드 직접 삽입
-                    container.innerHTML = `
-                        <div id="${fallbackId}" class="mermaid" style="text-align: center; padding: 20px;">
-                            ${code}
-                        </div>
-                    `;
+                    // 새로운 Mermaid 요소 생성 및 삽입
+                    const mermaidDiv = document.createElement('div');
+                    mermaidDiv.id = fallbackId;
+                    mermaidDiv.className = 'mermaid';
+                    mermaidDiv.style.textAlign = 'center';
+                    mermaidDiv.style.padding = '20px';
+                    mermaidDiv.textContent = code;
+
+                    container.appendChild(mermaidDiv);
 
                     // DOM 렌더링 대기
                     await new Promise(resolve => setTimeout(resolve, 200));
@@ -533,15 +551,51 @@
 
         // 로딩 표시
         function showLoading() {
+            const container = document.getElementById('diagramContainer');
             const placeholderElement = document.getElementById('placeholder');
             const loadingElement = document.getElementById('loading');
             const btnTextElement = document.getElementById('btnText');
             const buttonElement = document.querySelector('.generate-btn');
+            const actionsElement = document.getElementById('diagramActions');
 
-            if (placeholderElement) placeholderElement.style.display = 'none';
-            if (loadingElement) loadingElement.style.display = 'flex';
-            if (btnTextElement) btnTextElement.textContent = '생성 중...';
-            if (buttonElement) buttonElement.disabled = true;
+            console.log('🔄 로딩 표시 시작');
+
+            // 기존 다이어그램 내용 모두 숨기기
+            if (container) {
+                // 기존 렌더된 다이어그램이 있다면 숨기기
+                const existingDiagrams = container.querySelectorAll('div:not(#placeholder):not(#loading)');
+                existingDiagrams.forEach(diagram => {
+                    diagram.style.display = 'none';
+                });
+            }
+
+            // placeholder와 actions 숨기기
+            if (placeholderElement) {
+                placeholderElement.style.display = 'none';
+                console.log('✅ placeholder 숨김');
+            }
+            if (actionsElement) {
+                actionsElement.style.display = 'none';
+                console.log('✅ actions 숨김');
+            }
+            
+            // 로딩 표시
+            if (loadingElement) {
+                loadingElement.style.display = 'flex';
+                console.log('✅ 로딩 스피너 표시');
+            } else {
+                console.error('❌ 로딩 요소를 찾을 수 없음');
+            }
+            
+            // 버튼 상태 변경
+            if (btnTextElement) {
+                btnTextElement.textContent = '생성 중...';
+                console.log('✅ 버튼 텍스트 변경');
+            }
+            if (buttonElement) {
+                buttonElement.disabled = true;
+                console.log('✅ 버튼 비활성화');
+            }
         }
 
         // 로딩 숨기기
@@ -550,9 +604,20 @@
             const btnTextElement = document.getElementById('btnText');
             const buttonElement = document.querySelector('.generate-btn');
 
-            if (loadingElement) loadingElement.style.display = 'none';
-            if (btnTextElement) btnTextElement.textContent = '다이어그램 생성';
-            if (buttonElement) buttonElement.disabled = false;
+            console.log('🔄 로딩 숨김 시작');
+
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+                console.log('✅ 로딩 스피너 숨김');
+            }
+            if (btnTextElement) {
+                btnTextElement.textContent = '다이어그램 생성';
+                console.log('✅ 버튼 텍스트 복원');
+            }
+            if (buttonElement) {
+                buttonElement.disabled = false;
+                console.log('✅ 버튼 활성화');
+            }
         }
 
         // 다이어그램 액션 버튼 표시
@@ -566,16 +631,29 @@
         // 에러 표시
         function showError(message) {
             const container = document.getElementById('diagramContainer');
+            const placeholderElement = document.getElementById('placeholder');
+            const loadingElement = document.getElementById('loading');
+
+            // 로딩 먼저 숨기기
+            hideLoading();
+
+            // 기존 다이어그램 제거
             if (container) {
-                container.innerHTML = `
-                    <div class="placeholder">
+                const existingDiagrams = container.querySelectorAll('div:not(#placeholder):not(#loading)');
+                existingDiagrams.forEach(diagram => {
+                    diagram.remove();
+                });
+
+                // placeholder 내용을 에러 메시지로 교체
+                if (placeholderElement) {
+                    placeholderElement.innerHTML = `
                         <div class="placeholder-icon">⚠️</div>
                         <h3>오류가 발생했습니다</h3>
                         <div style="text-align: left; max-width: 400px; margin: 0 auto;">${message}</div>
-                    </div>
-                `;
+                    `;
+                    placeholderElement.style.display = 'block';
+                }
             }
-            hideLoading();
         }
 
         // 예시 템플릿 설정
