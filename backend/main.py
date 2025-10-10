@@ -193,18 +193,18 @@ async def generate_diagram(request: DiagramRequest):
            - Azure: azr:azure, azr:functions, azr:sql-database
 
         {request.cloud_provider.upper()} 주요 서비스 및 아이콘:
-        - GCP: Compute(gcp:compute), Cloud Run(gcp:cloud-run), Compute Engine(gcp:cloud-compute), Cloud Storage(gcp:cloud-storage), Cloud SQL(gcp:cloud-sql), Firestore(gcp:cloud-firestore)
+        - GCP: Compute Engine(gcp:compute_engine), Cloud Run(gcp:cloud_run), Cloud Storage(gcp:cloud_storage), Cloud SQL(gcp:cloud_sql), Firestore(gcp:firestore)
         - AWS: EC2(aws:ec2), Lambda(aws:lambda), S3(aws:s3), RDS(aws:rds), ALB(aws:elb), CloudFront(aws:cloudfront)
         - Azure: App Service(azr:app-service), Functions(azr:functions), Blob Storage(azr:blob-storage), SQL Database(azr:sql-database)
 
         **올바른 예시:**
         ```
         architecture-beta
-            group vpc(gcp:google-cloud)[Virtual Private Cloud]
-            service loadbalancer(gcp:google-cloud)[Load Balancer] in vpc
-            service cloudrun(gcp:google-cloud-run)[Cloud Run] in vpc
-            service cloudsql(gcp:google-cloud)[Cloud SQL] in vpc
-            service storage(gcp:google-cloud-storage)[Cloud Storage] in vpc
+            group vpc(gcp:vpc)[Virtual Private Cloud]
+            service loadbalancer(gcp:load-balancing)[Load Balancer] in vpc
+            service cloudrun(gcp:cloud-run)[Cloud Run] in vpc
+            service cloudsql(gcp:cloud-sql)[Cloud SQL] in vpc
+            service storage(gcp:cloud-storage)[Cloud Storage] in vpc
 
             loadbalancer:B -- T:cloudrun
             cloudrun:R -- L:cloudsql
