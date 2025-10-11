@@ -533,3 +533,118 @@ body {
         padding: 8px 16px;
     }
 }
+
+/* Footer Styles */
+.footer {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    margin-top: 40px;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-info h3 {
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    color: #ecf0f1;
+}
+
+.footer-info p {
+    font-size: 0.95rem;
+    color: #bdc3c7;
+    max-width: 400px;
+}
+
+.footer-links {
+    display: flex;
+    align-items: center;
+}
+
+.github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.github-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.github-icon {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+}
+
+.github-link:hover .github-icon {
+    transform: rotate(360deg);
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px 40px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.footer-bottom p {
+    font-size: 0.9rem;
+    color: #bdc3c7;
+    margin: 0;
+}
+
+/* Footer Responsive */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 25px 20px;
+    }
+    
+    .footer-info h3 {
+        font-size: 1.2rem;
+    }
+    
+    .footer-info p {
+        font-size: 0.9rem;
+    }
+    
+    .github-link {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .github-icon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .footer-bottom {
+        padding: 15px 20px;
+    }
+    
+    .footer-bottom p {
+        font-size: 0.85rem;
+    }
+}
