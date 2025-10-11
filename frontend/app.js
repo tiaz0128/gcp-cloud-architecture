@@ -42,20 +42,26 @@ function initializeMermaid() {
         { name: 'gcp', loader: () => fetch(getIconUrl('gcp.json')).then(res => res.json()) },
         { name: 'azr', loader: () => fetch(getIconUrl('azr.json')).then(res => res.json()) },
         { name: 'aws', loader: () => fetch(getIconUrl('aws.json')).then(res => res.json()) },
-        { name: 'custom', loader: () => fetch(getIconUrl('custom.json')).then(res => res.json()) }
+        { name: 'custom', loader: () => fetch(getIconUrl('custom.json')).then(res => res.json()) },
+        {
+            name: 'logos',
+            loader: () =>
+                fetch('https://unpkg.com/@iconify-json/logos@1/icons.json').then((res) => res.json()),
+        },
+
     ]);
 }
 
 // Utility functions
 function getIconUrl(filename) {
     const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '');
-    
+
     if (window.location.hostname.includes('storage.googleapis.com')) {
         const pathParts = window.location.pathname.split('/');
         const bucketName = pathParts[1] || window.location.hostname.split('.')[0];
         return `https://storage.googleapis.com/${bucketName}/icons/${filename}`;
     }
-    
+
     return `${baseUrl}/icons/${filename}`;
 }
 
@@ -81,12 +87,12 @@ function getApiBaseUrl() {
 function showLoading(isManual = false) {
     const container = document.getElementById('diagramContainer');
     const placeholder = document.getElementById('placeholder');
-    
+
     if (container && placeholder) {
         // 기존 다이어그램 모두 제거
         const existingDiagrams = container.querySelectorAll('div:not(#placeholder)');
         existingDiagrams.forEach(diagram => diagram.remove());
-        
+
         // 스피너 표시
         const loadingText = isManual ? '다이어그램 렌더링 중...' : '다이어그램 생성 중...';
         placeholder.innerHTML = `
@@ -98,7 +104,7 @@ function showLoading(isManual = false) {
         `;
         placeholder.style.display = 'block';
     }
-    
+
     // 버튼 비활성화
     if (isManual) {
         const btnText = document.getElementById('manualBtnText');
@@ -118,7 +124,7 @@ function hideLoading(isManual = false) {
     if (placeholder) {
         placeholder.style.display = 'none';
     }
-    
+
     // 버튼 상태 복원
     if (isManual) {
         const btnText = document.getElementById('manualBtnText');
@@ -142,7 +148,7 @@ function showDiagramActions() {
 
 function showError(message) {
     console.log('showError 호출됨');
-    
+
     const container = document.getElementById('diagramContainer');
     const placeholder = document.getElementById('placeholder');
 
@@ -166,7 +172,7 @@ function showError(message) {
     const button = document.querySelector('#diagramForm .generate-btn');
     const manualBtnText = document.getElementById('manualBtnText');
     const manualButton = document.querySelector('#manualCodeForm .generate-btn');
-    
+
     if (btnText) btnText.textContent = '다이어그램 생성';
     if (button) button.disabled = false;
     if (manualBtnText) manualBtnText.textContent = '다이어그램 렌더링';
@@ -183,14 +189,14 @@ async function generateDiagram() {
     };
 
     console.log('다이어그램 생성 시작');
-    
+
     // 로딩 상태 표시
     showLoading();
 
     try {
         const API_BASE_URL = getApiBaseUrl();
         console.log('API 요청 전송:', API_BASE_URL);
-        
+
         const response = await fetch(`${API_BASE_URL}/generate-diagram`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -202,7 +208,7 @@ async function generateDiagram() {
         }
 
         const data = await response.json();
-        
+
         if (!data.mermaid_code) {
             throw new Error('API 응답에 mermaid_code가 없습니다.');
         }
@@ -214,7 +220,7 @@ async function generateDiagram() {
 
     } catch (error) {
         console.error('API 에러:', error);
-        
+
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             showError(`API 서버에 연결할 수 없습니다.<br><br>
                 <strong>현재 API URL:</strong> ${getApiBaseUrl()}<br><br>
@@ -255,7 +261,7 @@ async function renderManualCode() {
     }
 
     console.log('수동 코드 렌더링 시작');
-    
+
     // 로딩 상태 표시
     showLoading(true);
 
@@ -282,24 +288,24 @@ async function renderManualCode() {
 function clearDiagramContainer() {
     const container = document.getElementById('diagramContainer');
     if (!container) return;
-    
+
     // Get all direct children of the diagram container
     const children = Array.from(container.children);
-    
+
     // Remove all children except the placeholder
     children.forEach(child => {
         if (child.id !== 'placeholder') {
             child.remove();
         }
     });
-    
+
     // Reset mermaid counter to avoid conflicts
     mermaidCounter = 0;
 }
 
 async function renderMermaidDiagram(code) {
     const container = document.getElementById('diagramContainer');
-    
+
     if (!container) {
         console.error('다이어그램 컨테이너를 찾을 수 없습니다');
         return;
@@ -330,10 +336,10 @@ async function renderMermaidDiagram(code) {
 
     } catch (error) {
         console.error('Mermaid 렌더링 실패:', error);
-        
+
         // Clear any partial content before trying fallback
         clearDiagramContainer();
-        
+
         // Fallback method
         try {
             mermaidCounter++;
@@ -356,23 +362,23 @@ async function renderMermaidDiagram(code) {
             }
 
             mermaidElement.removeAttribute('data-processed');
-            
+
             // Try mermaid.init with error handling
             try {
                 await mermaid.init(undefined, mermaidElement);
-                
+
                 // Check if rendering was successful (SVG was created)
                 const svgElement = mermaidElement.querySelector('svg');
                 if (!svgElement) {
                     throw new Error('Mermaid 렌더링이 완료되지 않았습니다.');
                 }
-                
+
                 // 로딩 상태 숨기기
                 hideLoading(currentTab === 'manual-code');
-                
+
                 // Enable SVG interaction after fallback rendering
                 setTimeout(() => enableSVGInteraction(), 500);
-                
+
             } catch (initError) {
                 console.error('mermaid.init 실패:', initError);
                 // Remove the failed element
@@ -382,10 +388,10 @@ async function renderMermaidDiagram(code) {
 
         } catch (fallbackError) {
             console.error('모든 렌더링 방법 실패:', fallbackError);
-            
+
             // Ensure complete cleanup on final failure
             clearDiagramContainer();
-            
+
             showError(`다이어그램 렌더링에 실패했습니다.<br><br>
                 <strong>Mermaid 코드:</strong><br>
                 <pre style="background: #f5f5f5; padding: 15px; border-radius: 4px; font-size: 12px; overflow-x: auto; margin: 10px 0;">${code}</pre>
@@ -421,14 +427,14 @@ function downloadDiagram(format) {
         // Use current UI scale factor instead of fixed 2x
         // svgState.scale represents the current zoom level in the UI
         const scaleFactor = svgState.scale;
-        
+
         // Set canvas size based on current UI scale
         canvas.width = svgWidth * scaleFactor;
         canvas.height = svgHeight * scaleFactor;
-        
+
         // Scale the context to ensure correct drawing operations
         ctx.scale(scaleFactor, scaleFactor);
-        
+
         // Enable high-quality rendering
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
@@ -437,7 +443,7 @@ function downloadDiagram(format) {
         const svgClone = svg.cloneNode(true);
         svgClone.setAttribute('width', svgWidth);
         svgClone.setAttribute('height', svgHeight);
-        
+
         const svgData = new XMLSerializer().serializeToString(svgClone);
         const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
         const svgUrl = URL.createObjectURL(svgBlob);
@@ -446,7 +452,7 @@ function downloadDiagram(format) {
             // Fill white background for better contrast
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, svgWidth, svgHeight);
-            
+
             // Draw the image
             ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
 
@@ -461,7 +467,7 @@ function downloadDiagram(format) {
             URL.revokeObjectURL(svgUrl);
         };
 
-        img.onerror = function() {
+        img.onerror = function () {
             console.error('PNG 변환 중 오류가 발생했습니다.');
             alert('PNG 다운로드 중 오류가 발생했습니다. SVG 형식으로 다운로드해보세요.');
             URL.revokeObjectURL(svgUrl);
@@ -588,7 +594,7 @@ function enableSVGInteraction() {
     svgElement.addEventListener('mousemove', drag);
     svgElement.addEventListener('mouseup', endDrag);
     svgElement.addEventListener('mouseleave', endDrag);
-    
+
     // Touch support
     svgElement.addEventListener('touchstart', startDragTouch, { passive: false });
     svgElement.addEventListener('touchmove', dragTouch, { passive: false });
@@ -655,7 +661,7 @@ function startDrag(e) {
 function drag(e) {
     if (!svgState.isDragging) return;
     e.preventDefault();
-    
+
     svgState.translateX = e.clientX - svgState.startX;
     svgState.translateY = e.clientY - svgState.startY;
     applySVGTransform();
@@ -680,7 +686,7 @@ function startDragTouch(e) {
 function dragTouch(e) {
     if (!svgState.isDragging || e.touches.length !== 1) return;
     e.preventDefault();
-    
+
     const touch = e.touches[0];
     svgState.translateX = touch.clientX - svgState.startX;
     svgState.translateY = touch.clientY - svgState.startY;
