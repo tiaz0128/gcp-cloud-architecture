@@ -418,10 +418,11 @@ function downloadDiagram(format) {
         const svgWidth = svg.viewBox?.baseVal?.width || svgRect.width || 800;
         const svgHeight = svg.viewBox?.baseVal?.height || svgRect.height || 600;
 
-        // High resolution scale factor (2x for retina displays, can be increased for higher quality)
-        const scaleFactor = 3;
+        // Use current UI scale factor instead of fixed 2x
+        // svgState.scale represents the current zoom level in the UI
+        const scaleFactor = svgState.scale;
         
-        // Set high resolution canvas size
+        // Set canvas size based on current UI scale
         canvas.width = svgWidth * scaleFactor;
         canvas.height = svgHeight * scaleFactor;
         
@@ -432,7 +433,7 @@ function downloadDiagram(format) {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // Create high-quality SVG data
+        // Create SVG data with current scale
         const svgClone = svg.cloneNode(true);
         svgClone.setAttribute('width', svgWidth);
         svgClone.setAttribute('height', svgHeight);

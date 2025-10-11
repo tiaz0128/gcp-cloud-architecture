@@ -205,10 +205,10 @@ async def generate_diagram(request: DiagramRequest):
         ```
         architecture-beta
             group vpc(gcp:virtual_private_cloud)[Virtual Private Cloud]
-            service loadbalancer(gcp:load-balancing)[Load Balancer] in vpc
-            service cloudrun(gcp:cloud-run)[Cloud Run] in vpc
-            service cloudsql(gcp:cloud-sql)[Cloud SQL] in vpc
-            service storage(gcp:cloud-storage)[Cloud Storage] in vpc
+            service loadbalancer(gcp:cloud_load_balancing)[Load Balancer] in vpc
+            service cloudrun(gcp:cloud_run)[Cloud Run] in vpc
+            service cloudsql(gcp:cloud_sql)[Cloud SQL] in vpc
+            service storage(gcp:cloud_storage)[Cloud Storage] in vpc
 
             loadbalancer:B -- T:cloudrun
             cloudrun:R -- L:cloudsql
