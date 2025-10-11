@@ -99,8 +99,9 @@
                         </div>
                         <div class="example-item manual-example" data-code="architecture-beta
 
+    group python(custom:python)[Python]
     service web(custom:react)[Web App]
-    service api(custom:fastapi)[API Server]
+    service api(custom:fastapi)[API Server] in python
     
     web:R -- L:api">
                             ☁️ 웹-API 연결
@@ -122,7 +123,7 @@
                     <div class="diagram-controls" id="diagramControls">
                         <button class="control-btn" id="zoomInBtn" title="확대">+</button>
                         <button class="control-btn" id="zoomOutBtn" title="축소">−</button>
-                        <button class="control-btn" id="resetZoomBtn" title="원본 크기">↺</button>
+                        <button class="control-btn" id="resetZoomBtn" title="원본 크기">⤢</button>
                         <div class="zoom-level" id="zoomLevel">100%</div>
                     </div>
                     <div class="diagram-container" id="diagramContainer">

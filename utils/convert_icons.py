@@ -3,6 +3,53 @@ import json
 from pathlib import Path
 from typing import Optional
 
+ICON_PREFIX = "azr"
+
+# 파일명에서 제거할 문자열 리스트 예시 (정규표현식 지원)
+REMOVE_STRINGS = [
+    r".+-icon-service-",  #
+]
+
+DEFAULT_WIDTH = 48
+DEFAULT_HEIGHT = 48
+
+
+def normalize_icon_name(filename: str, remove_strings: list[str] = None) -> str:
+    """
+    파일명을 정규화합니다.
+
+    Args:
+        filename: 원본 파일명 (확장자 제외)
+        remove_strings: 파일명에서 제거할 문자열 리스트 (정규표현식 지원)
+                       예: ["azure-", r"\d+", "icon$"]
+
+    Returns:
+        정규화된 파일명 (소문자와 언더바만)
+    """
+    if remove_strings is None:
+        remove_strings = []
+
+    # 지정된 문자열들 제거 (정규표현식 지원)
+    for remove_str in remove_strings:
+        try:
+            # 정규표현식으로 시도
+            filename = re.sub(remove_str, "", filename)
+        except re.error:
+            # 정규표현식이 아닌 일반 문자열로 처리
+            filename = filename.replace(remove_str, "")
+
+    # 특수문자를 언더바로 변환하고 소문자로 변환
+    filename = re.sub(r"[^a-zA-Z0-9_]", "_", filename)
+    filename = filename.lower()
+
+    # 연속된 언더바를 하나로 줄이기
+    filename = re.sub(r"_+", "_", filename)
+
+    # 앞뒤 언더바 제거
+    filename = filename.strip("_")
+
+    return filename
+
 
 def extract_svg_body(svg_content: str) -> str:
     """
@@ -63,11 +110,14 @@ def extract_svg_dimensions(svg_content: str) -> tuple[int, int]:
         return int(width_match.group(1)), int(height_match.group(1))
 
     # 기본값 반환
-    return 24, 24
+    return DEFAULT_WIDTH, DEFAULT_HEIGHT
 
 
 def svg_to_json_body(
-    svg_file_path: str, icon_name: str, output_width: int = 24, output_height: int = 24
+    svg_file_path: str,
+    icon_name: str,
+    output_width: int = DEFAULT_WIDTH,
+    output_height: int = DEFAULT_HEIGHT,
 ) -> dict:
     """
     SVG 파일을 JSON 형식의 body로 변환합니다.
@@ -75,8 +125,8 @@ def svg_to_json_body(
     Args:
         svg_file_path: SVG 파일 경로
         icon_name: 아이콘 이름 (키로 사용)
-        output_width: 출력 width (기본값: 24)
-        output_height: 출력 height (기본값: 24)
+        output_width: 출력 width (기본값)
+        output_height: 출력 height (기본값)
 
     Returns:
         JSON 형식의 딕셔너리
@@ -102,9 +152,9 @@ def svg_to_json_body(
 def process_multiple_svgs(
     svg_files: list[tuple[str, str]],
     output_file: Optional[str] = None,
-    output_width: int = 24,
-    output_height: int = 24,
-    prefix: str = "gcp",
+    output_width: int = DEFAULT_WIDTH,
+    output_height: int = DEFAULT_HEIGHT,
+    remove_strings: list[str] = None,
 ) -> dict:
     """
     여러 SVG 파일을 한 번에 처리합니다.
@@ -114,25 +164,32 @@ def process_multiple_svgs(
         output_file: 출력 파일 경로 (None이면 출력하지 않음)
         output_width: 출력 width
         output_height: 출력 height
-        prefix: 아이콘 세트의 prefix
+        remove_strings: 파일명에서 제거할 문자열 리스트 (정규표현식 지원)
+                       예: ["azure-", r"\d+", "icon$"]
 
     Returns:
-        prefix와 icons를 포함하는 딕셔너리
+        icons를 포함하는 딕셔너리
     """
+    if remove_strings is None:
+        remove_strings = []
+
     all_icons = {}
 
     for svg_path, icon_name in svg_files:
         try:
+            # 파일명 정규화
+            normalized_name = normalize_icon_name(icon_name, remove_strings)
+
             icon_data = svg_to_json_body(
-                svg_path, icon_name, output_width, output_height
+                svg_path, normalized_name, output_width, output_height
             )
             all_icons.update(icon_data)
-            print(f"✓ {icon_name} 변환 완료")
+            print(f"✓ {icon_name} -> {normalized_name} 변환 완료")
         except Exception as e:
             print(f"✗ {icon_name} 변환 실패: {e}")
 
     # 최종 결과 구조 생성
-    result = {"prefix": prefix, "icons": all_icons}
+    result = {"prefix": ICON_PREFIX, "icons": all_icons}
 
     # 파일로 출력
     if output_file:
@@ -143,8 +200,11 @@ def process_multiple_svgs(
     return result
 
 
+# icons/{prefix} 폴더 내에 있는 모든 SVG 파일을 아이콘명으로 변환
 if __name__ == "__main__":
-    # icons/gcp 폴더 내에 있는 모든 SVG 파일을 아이콘명으로 변환
-
-    svg_list = [(str(p), p.stem) for p in Path("icons/gcp").glob("*.svg")]
-    process_multiple_svgs(svg_list, output_file="gcp.json")
+    svg_list = [(str(p), p.stem) for p in Path(f"icons/{ICON_PREFIX}").glob("*.svg")]
+    process_multiple_svgs(
+        svg_list,
+        output_file=f"{ICON_PREFIX}.json",
+        remove_strings=REMOVE_STRINGS,
+    )
