@@ -177,6 +177,7 @@ async def generate_diagram(request: DiagramRequest):
            - architecture-beta로 시작
            - 4칸 들여쓰기 사용
            - ( ), [ ] 괄호안에 빈값은 허용하지 않음
+           - // 주석은 사용하지 마세요
            
         2. **아이콘 참고**:
            - <provider>:아이콘명 형식 사용
@@ -188,7 +189,7 @@ async def generate_diagram(request: DiagramRequest):
            - mdi: mdi:account, mdi:server, mdi:earth, mdi:heart
 
         주요 서비스 및 아이콘:
-        - GCP: Compute Engine(gcp:compute_engine), Cloud Run(gcp:cloud_run), Cloud Storage(gcp:cloud_storage), Cloud SQL(gcp:cloud_sql), Firestore(gcp:firestore)
+        - GCP: Compute Engine(gcp:compute_engine), Cloud Run(gcp:cloud_run), Cloud Storage(gcp:cloud_storage), Cloud SQL(gcp:cloud_sql), Firestore(gcp:firestore), Vertex AI(gcp:vertexai)
         - AWS: EC2(aws:amazon_ec2_db_instance), VPC(aws:amazon_virtual_private_cloud), Lambda(aws:aws_lambda_lambda_function), S3(aws:amazon_simple_storage_service_s3_standard), RDS(aws:amazon_rds_multi_az), ALB(aws:elastic_load_balancing_application_load_balancer), CloudFront(aws:amazon_cloudfront)
         - Azure: VM(azr:virtual_machine), App Service(azr:app_services), Functions(azr:functions), Blob Storage(azr:blob_storage), SQL Database(azr:sql_database)
 
