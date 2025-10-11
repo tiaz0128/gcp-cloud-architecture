@@ -198,8 +198,8 @@ async def generate_diagram(request: DiagramRequest):
 
         {request.cloud_provider.upper()} 주요 서비스 및 아이콘:
         - GCP: Compute Engine(gcp:compute_engine), Cloud Run(gcp:cloud_run), Cloud Storage(gcp:cloud_storage), Cloud SQL(gcp:cloud_sql), Firestore(gcp:firestore)
-        - AWS: EC2(aws:ec2), Lambda(aws:lambda), S3(aws:s3), RDS(aws:rds), ALB(aws:elb), CloudFront(aws:cloudfront)
-        - Azure: App Service(azr:app_service), Functions(azr:functions), Blob Storage(azr:blob_storage), SQL Database(azr:sql_database)
+        - AWS: EC2(aws:amazon_ec2_db_instance), Lambda(aws:aws_lambda_lambda_function), S3(aws:amazon_simple_storage_service_s3_standard), RDS(aws:amazon_rds_multi_az), ALB(aws:elastic_load_balancing_application_load_balancer), CloudFront(aws:amazon_cloudfront)
+        - Azure: VM(azr:virtual_machine), App Service(azr:app_services), Functions(azr:functions), Blob Storage(azr:blob_storage), SQL Database(azr:sql_database)
 
         **올바른 예시:**
         ```
