@@ -35,15 +35,15 @@ def clean_mermaid_code(code: str) -> str:
         def clean_special_chars_in_label(match):
             label_content = match.group(1)
             # 특수문자를 공백으로 변환 후 여러 공백을 하나로 정리
-            # 영문자, 숫자, 공백, 하이픈, 언더스코어만 남기고 나머지 제거
-            cleaned_content = re.sub(r"[^\w\s\-]", " ", label_content)
+            # 영문자, 숫자, 공백, 언더스코어만 남기고 나머지 제거
+            cleaned_content = re.sub(r"[^\w\s]", " ", label_content)
             # 여러 공백을 하나로 정리하고 앞뒤 공백 제거
             cleaned_content = re.sub(r"\s+", " ", cleaned_content).strip()
             return f"[{cleaned_content}]"
 
         # 패턴: [내용] 형태에서 특수문자가 포함된 경우 정리
         line = re.sub(
-            r"\[([^\[\]]*[^\w\s\-][^\[\]]*)\]", clean_special_chars_in_label, line
+            r"\[([^\[\]]*[^\w\s][^\[\]]*)\]", clean_special_chars_in_label, line
         )
 
         # architecture-beta 구문에서는 기본적으로 안전한 구문 사용
@@ -177,7 +177,10 @@ async def generate_diagram(request: DiagramRequest):
            - architecture-beta로 시작
            - 4칸 들여쓰기 사용
            - ( ), [ ] 괄호안에 빈값은 허용하지 않음
-           - // 주석은 사용하지 마세요
+           - 주석은 %% 로 시작하지만, 이번에는 사용하지 않음
+           - Edge 선언 시 그룹은 절대 사용하지 않음 (serviceId{{group}} 형태 금지)
+           - 주석 절대 쓰지마
+
            
         2. **아이콘 참고**:
            - <provider>:아이콘명 형식 사용
@@ -191,7 +194,7 @@ async def generate_diagram(request: DiagramRequest):
         주요 서비스 및 아이콘:
         - GCP: Compute Engine(gcp:compute_engine), Cloud Run(gcp:cloud_run), Cloud Storage(gcp:cloud_storage), Cloud SQL(gcp:cloud_sql), Firestore(gcp:firestore), Vertex AI(gcp:vertexai)
         - AWS: EC2(aws:amazon_ec2_db_instance), VPC(aws:amazon_virtual_private_cloud), Lambda(aws:aws_lambda_lambda_function), S3(aws:amazon_simple_storage_service_s3_standard), RDS(aws:amazon_rds_multi_az), ALB(aws:elastic_load_balancing_application_load_balancer), CloudFront(aws:amazon_cloudfront)
-        - Azure: VM(azr:virtual_machine), App Service(azr:app_services), Functions(azr:functions), Blob Storage(azr:blob_storage), SQL Database(azr:sql_database)
+        - Azure: VM(azr:virtual_machine), App Service(azr:app_services), Functions(azr:functions), Blob Storage(azr:blob_block), SQL Database(azr:sql_database)
 
         ---
 
@@ -275,7 +278,7 @@ async def generate_diagram(request: DiagramRequest):
         The syntax for declaring an edge is:
 
         ```
-        {serviceId}{{group}}?:{T|B|L|R} {<}?--{>}? {T|B|L|R}:{serviceId}{{group}}?
+        {serviceId}?:{T|B|L|R} {<}?--{>}? {T|B|L|R}:{serviceId}?
         ```
 
         #### Edge Direction
