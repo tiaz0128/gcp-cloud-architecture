@@ -11,7 +11,7 @@
 ## 프로젝트 링크
 
 <div align="center">
-  <p style="font-size:3rem"><a href="https://storage.googleapis.com/gleaming-modem-474701-f3-cloud-architecture-frontend/index.html">URL 링크 클릭</p>
+  <h3><a href="https://storage.googleapis.com/gleaming-modem-474701-f3-cloud-architecture-frontend/index.html">URL 링크 클릭</h3>
   <img src="img/qr.png" width="320px"/>
 </div>
 
