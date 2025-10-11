@@ -48,6 +48,11 @@ function initializeMermaid() {
             loader: () =>
                 fetch('https://unpkg.com/@iconify-json/logos@1/icons.json').then((res) => res.json()),
         },
+        {
+            name: 'mdi',
+            loader: () =>
+                fetch('https://unpkg.com/@iconify-json/mdi@1/icons.json').then((res) => res.json()),
+        },
 
     ]);
 }

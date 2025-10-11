@@ -185,6 +185,7 @@ async def generate_diagram(request: DiagramRequest):
            - AWS: logos:aws, aws:amazon_virtual_private_cloud
            - Azure: logos:microsoft-azure, azr:virtual_networks
            - logos: logos:python, logos:react, logos:fastapi-icon
+           - mdi: mdi:account, mdi:server, mdi:earth, mdi:heart
 
         주요 서비스 및 아이콘:
         - GCP: Compute Engine(gcp:compute_engine), Cloud Run(gcp:cloud_run), Cloud Storage(gcp:cloud_storage), Cloud SQL(gcp:cloud_sql), Firestore(gcp:firestore)
