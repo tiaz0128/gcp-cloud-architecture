@@ -183,6 +183,7 @@ async def generate_diagram(request: DiagramRequest):
            - GCP: gcp:google_cloud, gcp:virtual_private_cloud
            - AWS: aws:aws, aws:amazon_virtual_private_cloud
            - Azure: azr:azure, azr:virtual_networks
+           - logos: logos:python, logos:react, logos:fastapi-icon
 
         주요 서비스 및 아이콘:
         - GCP: Compute Engine(gcp:compute_engine), Cloud Run(gcp:cloud_run), Cloud Storage(gcp:cloud_storage), Cloud SQL(gcp:cloud_sql), Firestore(gcp:firestore)
@@ -347,27 +348,6 @@ async def generate_diagram(request: DiagramRequest):
             junctionCenter:R -- L:junctionRight
             top_gateway:B -- T:junctionRight
             bottom_gateway:T -- B:junctionRight
-        ```
-
-        ## Icons
-
-        By default, architecture diagram supports the following icons: `cloud`, `database`, `disk`, `internet`, `server`.
-        Users can use any of the 200,000+ icons available in iconify.design, or add other custom icons, by [registering an icon pack](../config/icons.md).
-
-        After the icons are installed, they can be used in the architecture diagram by using the format "name:icon-name", where name is the value used when registering the icon pack.
-
-        ```mermaid-example
-        architecture-beta
-            group api(logos:aws-lambda)[API]
-
-            service db(logos:aws-aurora)[Database] in api
-            service disk1(logos:aws-glacier)[Storage] in api
-            service disk2(logos:aws-s3)[Storage] in api
-            service server(logos:aws-ec2)[Server] in api
-
-            db:L -- R:server
-            disk1:T -- B:server
-            disk2:T -- B:db
         ```
 
         ---
