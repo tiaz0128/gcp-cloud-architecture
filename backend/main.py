@@ -176,6 +176,7 @@ async def generate_diagram(request: DiagramRequest):
         1. **기본 구조**:
            - architecture-beta로 시작
            - 4칸 들여쓰기 사용
+           - ( ), [ ] 괄호안에 빈값은 허용하지 않음
            
         2. **아이콘 참고**:
            - <provider>:아이콘명 형식 사용
