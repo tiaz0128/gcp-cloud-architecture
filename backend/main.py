@@ -181,9 +181,9 @@ async def generate_diagram(request: DiagramRequest):
         2. **아이콘 참고**:
            - <provider>:아이콘명 형식 사용
            - 서비스 / 리소스명은 소문자 _(언더스코어)로 연결 (예: cloud_run, sql_database)
-           - GCP: gcp:google_cloud, gcp:virtual_private_cloud
-           - AWS: aws:aws, aws:amazon_virtual_private_cloud
-           - Azure: azr:azure, azr:virtual_networks
+           - GCP: logos:google-cloud, gcp:virtual_private_cloud
+           - AWS: logos:aws, aws:amazon_virtual_private_cloud
+           - Azure: logos:microsoft-azure, azr:virtual_networks
            - logos: logos:python, logos:react, logos:fastapi-icon
 
         주요 서비스 및 아이콘:
