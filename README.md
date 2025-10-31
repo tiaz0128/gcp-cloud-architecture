@@ -15,6 +15,10 @@
   <img src="img/qr.png" width="320px"/>
 </div>
 
+## 🤖 AI 에이전트 활용
+
+이 프로젝트는 GitHub Copilot AI 에이전트의 도움을 받을 수 있습니다. AI 에이전트가 수행할 수 있는 작업 목록과 활용 방법은 [CAPABILITIES.md](CAPABILITIES.md)를 참조하세요.
+
 <br/>
 <br/>
 <br/>
