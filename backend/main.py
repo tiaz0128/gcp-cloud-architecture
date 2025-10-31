@@ -67,8 +67,15 @@ app = FastAPI(title="Cloud Architecture Diagram Generator")
 
 # 환경변수에서 허용된 오리진 가져오기 (쉼표로 구분)
 # 예: ALLOWED_ORIGINS="https://example.com,https://storage.googleapis.com"
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
+ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_env.split(",")]
+
+# CORS 와일드카드 검증
 if "*" in ALLOWED_ORIGINS:
+    if len(ALLOWED_ORIGINS) > 1:
+        logger.error("⚠️  CORS 설정 오류: 와일드카드(*)는 단독으로만 사용 가능합니다. 다른 오리진과 함께 사용할 수 없습니다.")
+        # 보안을 위해 와일드카드가 포함된 경우 와일드카드만 사용
+        ALLOWED_ORIGINS = ["*"]
     logger.warning("⚠️  CORS가 모든 오리진을 허용하도록 설정되어 있습니다. 프로덕션 환경에서는 ALLOWED_ORIGINS 환경변수를 설정하세요.")
 
 # CORS 설정
@@ -149,8 +156,18 @@ except Exception as e:
 # 데이터 모델
 class DiagramRequest(BaseModel):
     description: str = Field(..., min_length=10, max_length=5000, description="Architecture description")
-    cloud_provider: str = Field(default="gcp", pattern="^(gcp|aws|azure)$", description="Cloud provider")
+    cloud_provider: str = Field(default="gcp", description="Cloud provider")
     diagram_type: str = Field(default="architecture-beta", description="Diagram type")
+    
+    @classmethod
+    def model_validate(cls, obj):
+        # cloud_provider 정규화: 소문자로 변환하고 공백 제거
+        if isinstance(obj, dict) and "cloud_provider" in obj:
+            obj["cloud_provider"] = obj["cloud_provider"].strip().lower()
+            # 유효한 값인지 확인
+            if obj["cloud_provider"] not in ["gcp", "aws", "azure"]:
+                raise ValueError("Invalid cloud_provider. Must be one of: gcp, aws, azure")
+        return super().model_validate(obj)
 
 
 class DiagramResponse(BaseModel):
