@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from google.cloud import firestore
 import vertexai
 from vertexai.generative_models import GenerativeModel
@@ -73,9 +73,13 @@ ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_env.split(",")]
 # CORS 와일드카드 검증
 if "*" in ALLOWED_ORIGINS:
     if len(ALLOWED_ORIGINS) > 1:
-        logger.error("⚠️  CORS 설정 오류: 와일드카드(*)는 단독으로만 사용 가능합니다. 다른 오리진과 함께 사용할 수 없습니다.")
-        # 보안을 위해 와일드카드가 포함된 경우 와일드카드만 사용
-        ALLOWED_ORIGINS = ["*"]
+        logger.error("❌ CORS 설정 오류: 와일드카드(*)는 단독으로만 사용 가능합니다.")
+        logger.error(f"현재 설정: {ALLOWED_ORIGINS}")
+        logger.error("ALLOWED_ORIGINS 환경변수를 '*' 또는 특정 도메인 목록으로 설정하세요.")
+        raise ValueError(
+            "CORS 설정 오류: 와일드카드는 다른 오리진과 함께 사용할 수 없습니다. "
+            "ALLOWED_ORIGINS='*' 또는 'https://domain1.com,https://domain2.com' 형식으로 설정하세요."
+        )
     logger.warning("⚠️  CORS가 모든 오리진을 허용하도록 설정되어 있습니다. 프로덕션 환경에서는 ALLOWED_ORIGINS 환경변수를 설정하세요.")
 
 # CORS 설정
@@ -105,8 +109,13 @@ def get_project_id():
             )
             response.raise_for_status()
             project_id = response.text
+        except requests.HTTPError as e:
+            if 400 <= e.response.status_code < 500:
+                logger.warning(f"메타데이터 서버 클라이언트 오류 (4xx): {e}")
+            else:
+                logger.warning(f"메타데이터 서버 오류 (5xx): {e}")
         except requests.RequestException as e:
-            logger.warning(f"메타데이터에서 프로젝트 ID 가져오기 실패: {e}")
+            logger.warning(f"메타데이터 서버 연결 실패: {e}")
 
     if not project_id:
         # 프로젝트 ID를 찾을 수 없는 경우 에러 로그
@@ -156,18 +165,24 @@ except Exception as e:
 # 데이터 모델
 class DiagramRequest(BaseModel):
     description: str = Field(..., min_length=10, max_length=5000, description="Architecture description")
-    cloud_provider: str = Field(default="gcp", description="Cloud provider")
+    cloud_provider: str = Field(default="gcp", description="Cloud provider (gcp, aws, azure)")
     diagram_type: str = Field(default="architecture-beta", description="Diagram type")
     
+    @field_validator("cloud_provider")
     @classmethod
-    def model_validate(cls, obj):
-        # cloud_provider 정규화: 소문자로 변환하고 공백 제거
-        if isinstance(obj, dict) and "cloud_provider" in obj:
-            obj["cloud_provider"] = obj["cloud_provider"].strip().lower()
-            # 유효한 값인지 확인
-            if obj["cloud_provider"] not in ["gcp", "aws", "azure"]:
-                raise ValueError("Invalid cloud_provider. Must be one of: gcp, aws, azure")
-        return super().model_validate(obj)
+    def validate_cloud_provider(cls, v: str) -> str:
+        """클라우드 제공자 검증 및 정규화"""
+        # 소문자로 변환하고 공백 제거
+        normalized = v.strip().lower()
+        
+        # 유효한 값인지 확인
+        valid_providers = ["gcp", "aws", "azure"]
+        if normalized not in valid_providers:
+            raise ValueError(
+                f"Invalid cloud_provider '{v}'. Must be one of: {', '.join(valid_providers)}"
+            )
+        
+        return normalized
 
 
 class DiagramResponse(BaseModel):
