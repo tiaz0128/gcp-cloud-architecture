@@ -1,12 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from google.cloud import firestore
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import os
 from datetime import datetime
 import logging
+import re
+import requests
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -29,8 +31,6 @@ def clean_mermaid_code(code: str) -> str:
 
         # 대괄호 안의 특수문자 처리 - 예: [Cloud Storage (Static Files)]
         # Mermaid에서 대괄호 안에 특수문자가 있으면 문제가 될 수 있으므로 안전하게 제거
-        import re
-
         # 대괄호 안에 특수문자가 있는 패턴을 찾아서 특수문자를 제거
         def clean_special_chars_in_label(match):
             label_content = match.group(1)
@@ -65,10 +65,27 @@ def clean_mermaid_code(code: str) -> str:
 
 app = FastAPI(title="Cloud Architecture Diagram Generator")
 
+# 환경변수에서 허용된 오리진 가져오기 (쉼표로 구분)
+# 예: ALLOWED_ORIGINS="https://example.com,https://storage.googleapis.com"
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
+ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_env.split(",")]
+
+# CORS 와일드카드 검증
+if "*" in ALLOWED_ORIGINS:
+    if len(ALLOWED_ORIGINS) > 1:
+        logger.error("❌ CORS 설정 오류: 와일드카드(*)는 단독으로만 사용 가능합니다.")
+        logger.error(f"현재 설정: {ALLOWED_ORIGINS}")
+        logger.error("ALLOWED_ORIGINS 환경변수를 '*' 또는 특정 도메인 목록으로 설정하세요.")
+        raise ValueError(
+            "CORS 설정 오류: 와일드카드는 다른 오리진과 함께 사용할 수 없습니다. "
+            "ALLOWED_ORIGINS='*' 또는 'https://domain1.com,https://domain2.com' 형식으로 설정하세요."
+        )
+    logger.warning("⚠️  CORS가 모든 오리진을 허용하도록 설정되어 있습니다. 프로덕션 환경에서는 ALLOWED_ORIGINS 환경변수를 설정하세요.")
+
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 프로덕션에서는 특정 도메인으로 제한
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -85,22 +102,30 @@ def get_project_id():
     if not project_id:
         # metadata 서버에서 프로젝트 ID 가져오기 시도
         try:
-            import requests
-
             response = requests.get(
                 "http://metadata.google.internal/computeMetadata/v1/project/project-id",
                 headers={"Metadata-Flavor": "Google"},
                 timeout=5,
             )
-            if response.status_code == 200:
-                project_id = response.text
-        except Exception as e:
-            logger.warning(f"메타데이터에서 프로젝트 ID 가져오기 실패: {e}")
+            response.raise_for_status()
+            project_id = response.text
+        except requests.HTTPError as e:
+            if 400 <= e.response.status_code < 500:
+                logger.warning(f"메타데이터 서버 클라이언트 오류 (4xx): {e}")
+            else:
+                logger.warning(f"메타데이터 서버 오류 (5xx): {e}")
+        except requests.RequestException as e:
+            logger.warning(f"메타데이터 서버 연결 실패: {e}")
 
     if not project_id:
-        # 기본값 설정 (환경에 따라 수정 필요)
-        project_id = "gleaming-modem-474701-f3"
-        logger.warning(f"프로젝트 ID를 찾을 수 없어 기본값 사용: {project_id}")
+        # 프로젝트 ID를 찾을 수 없는 경우 에러 로그
+        logger.error("⚠️  프로젝트 ID를 찾을 수 없습니다. 다음 환경변수 중 하나를 설정하세요: GOOGLE_CLOUD_PROJECT, GCP_PROJECT, GCLOUD_PROJECT")
+        # 개발 환경에서만 기본값 사용 (환경변수로 명시적으로 설정된 경우)
+        project_id = os.getenv("DEFAULT_PROJECT_ID")
+        if project_id:
+            logger.warning(f"개발 환경 기본 프로젝트 ID 사용: {project_id}")
+        else:
+            raise ValueError("프로젝트 ID를 설정할 수 없습니다. 환경변수를 확인하세요.")
 
     logger.info(f"사용중인 프로젝트 ID: {project_id}")
     return project_id
@@ -129,6 +154,9 @@ try:
     vertexai.init(project=project_id, location="asia-northeast3")
     model = GenerativeModel("gemini-2.5-flash")
     logger.info("Vertex AI 초기화 성공")
+except ValueError as e:
+    logger.error(f"Vertex AI 초기화 실패 - 프로젝트 ID 오류: {e}")
+    model = None
 except Exception as e:
     logger.error(f"Vertex AI 초기화 실패: {e}")
     model = None
@@ -136,9 +164,25 @@ except Exception as e:
 
 # 데이터 모델
 class DiagramRequest(BaseModel):
-    description: str
-    cloud_provider: str = "gcp"  # gcp, aws, azure
-    diagram_type: str = "architecture-beta"  #
+    description: str = Field(..., min_length=10, max_length=5000, description="Architecture description")
+    cloud_provider: str = Field(default="gcp", description="Cloud provider (gcp, aws, azure)")
+    diagram_type: str = Field(default="architecture-beta", description="Diagram type")
+    
+    @field_validator("cloud_provider")
+    @classmethod
+    def validate_cloud_provider(cls, v: str) -> str:
+        """클라우드 제공자 검증 및 정규화"""
+        # 소문자로 변환하고 공백 제거
+        normalized = v.strip().lower()
+        
+        # 유효한 값인지 확인
+        valid_providers = ["gcp", "aws", "azure"]
+        if normalized not in valid_providers:
+            raise ValueError(
+                f"Invalid cloud_provider '{v}'. Must be one of: {', '.join(valid_providers)}"
+            )
+        
+        return normalized
 
 
 class DiagramResponse(BaseModel):
@@ -151,7 +195,18 @@ class DiagramResponse(BaseModel):
 
 @app.post("/generate-diagram", response_model=DiagramResponse)
 async def generate_diagram(request: DiagramRequest):
-    """AI로 Mermaid 다이어그램 코드 생성"""
+    """
+    AI로 Mermaid 다이어그램 코드 생성
+    
+    Args:
+        request: 다이어그램 생성 요청 (description, cloud_provider, diagram_type)
+        
+    Returns:
+        DiagramResponse: 생성된 다이어그램 정보
+        
+    Raises:
+        HTTPException: Vertex AI 또는 Firestore 서비스 오류, 다이어그램 생성 실패
+    """
     try:
         if model is None:
             raise HTTPException(
