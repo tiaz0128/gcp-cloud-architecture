@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 import logging
 import re
+import requests
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -67,7 +68,7 @@ app = FastAPI(title="Cloud Architecture Diagram Generator")
 # 환경변수에서 허용된 오리진 가져오기 (쉼표로 구분)
 # 예: ALLOWED_ORIGINS="https://example.com,https://storage.googleapis.com"
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
-if ALLOWED_ORIGINS == ["*"]:
+if "*" in ALLOWED_ORIGINS:
     logger.warning("⚠️  CORS가 모든 오리진을 허용하도록 설정되어 있습니다. 프로덕션 환경에서는 ALLOWED_ORIGINS 환경변수를 설정하세요.")
 
 # CORS 설정
@@ -90,8 +91,6 @@ def get_project_id():
     if not project_id:
         # metadata 서버에서 프로젝트 ID 가져오기 시도
         try:
-            import requests
-
             response = requests.get(
                 "http://metadata.google.internal/computeMetadata/v1/project/project-id",
                 headers={"Metadata-Flavor": "Google"},
